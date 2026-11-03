@@ -49,7 +49,7 @@
       overflow-x: hidden;
     }
 
-    /* PANTALLA DE CARGA CON LOADING ABAJO */
+    /* PANTALLA DE CARGA (SPLASH SCREEN BLANCA - 2 SEGUNDOS) */
     #loader-screen {
       position: fixed;
       top: 0;
@@ -58,10 +58,8 @@
       height: 100vh;
       background-color: #ffffff;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 2rem;
       z-index: 99999;
       opacity: 1;
       transition: opacity 0.4s ease, visibility 0.4s ease;
@@ -72,30 +70,32 @@
       visibility: hidden;
     }
 
-    .loader-logo {
-      max-width: 200px;
-      height: auto;
-      animation: pulse 1.5s infinite ease-in-out;
+    .loader-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
     }
 
-    /* SPINNER / INDICADOR DE LOADING */
+    /* LOGO DE TAMAÑO MEDIANO Y SIN ANIMACIÓN */
+    .loader-logo {
+      max-width: 130px;
+      height: auto;
+    }
+
+    /* CÍRCULO DE CARGA (SPINNER) NEGRO Y DE TAMAÑO MEDIANO */
     .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid rgba(0, 97, 255, 0.15);
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e9ecef;
+      border-top: 3px solid #121212;
       border-radius: 50%;
-      border-top-color: var(--primary-color);
       animation: spin 0.8s linear infinite;
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(0.98); opacity: 0.85; }
-      50% { transform: scale(1.03); opacity: 1; }
-      100% { transform: scale(0.98); opacity: 0.85; }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     /* HEADER BLOQUEADO A 70PX STRICTOS (SIN LOGO) */
@@ -318,13 +318,15 @@
 </head>
 <body>
 
-  <!-- PANTALLA DE CARGA BLANCA CON LOGO Y INDICADOR DE LOADING -->
+  <!-- PANTALLA DE CARGA (SPLASH SCREEN BLANCA CON LOGO Y SPINNER NEGRO DEBAJO) -->
   <div id="loader-screen">
-    <img src="https://i.postimg.cc/Y049Zr6S/WARE-1-removebg-preview.png" alt="Logo" class="loader-logo">
-    <div class="spinner"></div>
+    <div class="loader-content">
+      <img src="https://i.postimg.cc/Y049Zr6S/WARE-1-removebg-preview.png" alt="Logo" class="loader-logo">
+      <div class="spinner"></div>
+    </div>
   </div>
 
-  <!-- NAVBAR / HEADER -->
+  <!-- NAVBAR / HEADER (SIN LOGO EN LA BARRA) -->
   <header>
     <nav class="nav-tabs">
       <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
@@ -384,18 +386,18 @@
   </main>
 
   <script>
-    // PANTALLA DE CARGA (2 SEGUNDOS Y SE RETIRA JUNTO AL LOADING)
+    // 1. PANTALLA DE CARGA (2 SEGUNDOS EXACTOS)
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         const loader = document.getElementById('loader-screen');
         if (loader) {
           loader.classList.add('fade-out');
-          setTimeout(() => loader.remove(), 400);
+          setTimeout(() => loader.remove(), 400); 
         }
-      }, 2000);
+      }, 2000); 
     });
 
-    // LÓGICA DE TEMA CLARO / OSCURO
+    // 2. LÓGICA DE TEMA CLARO / OSCURO
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     
     themeToggleBtn.addEventListener('click', () => {
@@ -409,7 +411,7 @@
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // NAVEGACIÓN ENTRE PÁGINAS
+    // 3. NAVEGACIÓN ENTRE PÁGINAS
     function switchTab(pageId) {
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -425,7 +427,7 @@
       }
     }
 
-    // CONEXIÓN A SERVIDOR REAL
+    // 4. CONEXIÓN API / SERVIDOR
     const API_ENDPOINT = '/api/photos'; 
     const fileInput = document.getElementById('fileInput');
     const selectBtn = document.getElementById('selectBtn');
