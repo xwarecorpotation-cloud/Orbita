@@ -46,9 +46,38 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    /* HEADER BLOQUEADO A 70PX STRICTOS */
+    /* 1. PANTALLA DE CARGA (SPLASH SCREEN BLANCA - 2 SEGUNDOS) */
+    #splashScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    #splashScreen.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .splash-logo {
+      max-width: 250px;
+      width: 80%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* 2. HEADER BLOQUEADO SIN LOGO */
     header {
       background-color: var(--card-bg);
       border-bottom: 1px solid var(--border-color);
@@ -57,30 +86,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative;
     }
 
-    /* LOGO POSICIONADO A LA IZQUIERDA Y MÁS GRANDE (SIN AFECTAR AL HEADER) */
-    .logo-container {
-      display: flex;
-      align-items: center;
-      height: 100%;
-    }
-
-    .logo-img {
-      height: 52px; /* Tamaño más grande controlado quirúrgicamente */
-      width: auto;
-      object-fit: contain;
-      display: block;
-    }
-
-    /* NAVEGACIÓN Y ACCIONES */
-    .header-center-actions {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-    }
-
+    /* Navegación a la izquierda */
     .nav-tabs {
       display: flex;
       gap: 0.5rem;
@@ -102,6 +110,7 @@
       background-color: var(--hover-bg);
     }
 
+    /* Botón de tema a la derecha */
     .theme-toggle-btn {
       background: none;
       border: 1px solid var(--border-color);
@@ -289,37 +298,34 @@
 </head>
 <body>
 
-  <!-- NAVBAR / HEADER -->
-  <header>
-    <!-- LOGO A LA IZQUIERDA Y MÁS GRANDE (SIN DEFORMAR EL HEADER) -->
-    <div class="logo-container">
-      <img src="https://i.postimg.cc/Y049Zr6S/WARE-1-removebg-preview.png" alt="Logo WARE" class="logo-img">
-    </div>
-    
-    <!-- DERECHA: PESTAÑAS Y TEMA -->
-    <div class="header-center-actions">
-      <nav class="nav-tabs">
-        <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
-        <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
-      </nav>
+  <!-- PANTALLA DE CARGA (2 SEGUNDOS CON LOGO CENTRADO) -->
+  <div id="splashScreen">
+    <img src="https://i.postimg.cc/Y049Zr6S/WARE-1-removebg-preview.png" alt="Logo WARE" class="splash-logo">
+  </div>
 
-      <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Cambiar tema">
-        <svg class="moon-icon" viewBox="0 0 24 24">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-        <svg class="sun-icon" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="5"></circle>
-          <line x1="12" y1="1" x2="12" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="23"></line>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-          <line x1="1" y1="12" x2="3" y2="12"></line>
-          <line x1="21" y1="12" x2="23" y2="12"></line>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-        </svg>
-      </button>
-    </div>
+  <!-- NAVBAR / HEADER (SIN LOGO) -->
+  <header>
+    <nav class="nav-tabs">
+      <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
+      <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
+    </nav>
+
+    <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Cambiar tema">
+      <svg class="moon-icon" viewBox="0 0 24 24">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+      <svg class="sun-icon" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+    </button>
   </header>
 
   <!-- CONTENIDO PRINCIPAL -->
@@ -357,6 +363,15 @@
   </main>
 
   <script>
+    // --- LÓGICA PANTALLA DE CARGA (2 SEGUNDOS EXACTOS) ---
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        splash.classList.add('hidden');
+      }, 2000);
+    });
+
+    // --- LÓGICA DE TEMA CLARO / OSCURO ---
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     
     themeToggleBtn.addEventListener('click', () => {
@@ -370,6 +385,7 @@
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', savedTheme);
 
+    // --- NAVEGACIÓN DE PESTAÑAS ---
     function switchTab(pageId) {
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -385,6 +401,7 @@
       }
     }
 
+    // --- PETICIONES REALES A SERVIDOR / BD ---
     const API_ENDPOINT = '/api/photos'; 
     const fileInput = document.getElementById('fileInput');
     const selectBtn = document.getElementById('selectBtn');
