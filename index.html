@@ -48,20 +48,23 @@
       min-height: 100vh;
     }
 
-    /* Header Centrado */
+    /* HEADER MILIMÉTRICO Y BLOQUEADO (ALTURA FIJA DE 70PX) */
     header {
       background-color: var(--card-bg);
       border-bottom: 1px solid var(--border-color);
-      padding: 0.8rem 2rem;
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      height: 70px;
+      padding: 0 2rem;
+      display: flex;
+      justify-content: space-between;
       align-items: center;
+      position: relative;
     }
 
     /* Pestañas de Navegación */
     .nav-tabs {
       display: flex;
       gap: 0.5rem;
+      z-index: 2;
     }
 
     .tab-btn {
@@ -80,32 +83,38 @@
       background-color: var(--hover-bg);
     }
 
+    /* LOGO CENTRADO ABSOLUTO (IMPOSIBLE QUE ROMPA LA CAJA) */
     .logo-container {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      height: 100%;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      pointer-events: none; /* Permite clics a través si fuera necesario */
     }
 
-    /* Logo Mediano y Centrado */
     .logo-img {
-      max-height: 54px;
+      height: 38px; /* Tamaño mediano controlado quirúrgicamente */
       width: auto;
       object-fit: contain;
       display: block;
     }
 
-    /* Botón Modo Claro/Oscuro Estilizado */
+    /* Acciones Derecha */
     .header-actions {
       display: flex;
-      justify-content: flex-end;
+      align-items: center;
+      z-index: 2;
     }
 
     .theme-toggle-btn {
       background: none;
       border: 1px solid var(--border-color);
       border-radius: 50%;
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -119,8 +128,8 @@
     }
 
     .theme-toggle-btn svg {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       fill: none;
       stroke: currentColor;
       stroke-width: 2;
@@ -289,25 +298,23 @@
 
   <!-- NAVBAR / HEADER -->
   <header>
-    <!-- Navegación entre Pestañas -->
+    <!-- Pestañas de Navegación -->
     <nav class="nav-tabs">
       <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
       <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Fotos Públicas</button>
     </nav>
 
-    <!-- LOGO CENTRADO (MEDIANO) -->
+    <!-- LOGO CENTRADO ABSOLUTO (TAMAÑO MEDIANO Y CONTROLADO) -->
     <div class="logo-container">
       <img src="https://i.postimg.cc/Y049Zr6S/WARE-1-removebg-preview.png" alt="Logo WARE" class="logo-img">
     </div>
     
-    <!-- BOTÓN TEMA CLARO / OSCURO (SVGs MEJORADOS) -->
+    <!-- Botón Tema Claro / Oscuro -->
     <div class="header-actions">
       <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Cambiar tema">
-        <!-- Icono Luna (Modo Oscuro) -->
         <svg class="moon-icon" viewBox="0 0 24 24">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
-        <!-- Icono Sol (Modo Claro) -->
         <svg class="sun-icon" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="5"></circle>
           <line x1="12" y1="1" x2="12" y2="3"></line>
@@ -326,7 +333,7 @@
   <!-- CONTENIDO PRINCIPAL -->
   <main>
     
-    <!-- PÁGINA 1: MI CATÁLOGO (SUBIDA + MIS FOTOS) -->
+    <!-- PÁGINA 1: MI CATÁLOGO -->
     <div class="page-section active" id="catalogPage">
       <section class="upload-section" id="dropArea">
         <h3>Arrastra y suelta tus fotos aquí</h3>
@@ -358,7 +365,6 @@
   </main>
 
   <script>
-    // --- 1. LÓGICA DE TEMA CLARO / OSCURO ---
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     
     themeToggleBtn.addEventListener('click', () => {
@@ -372,8 +378,6 @@
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-
-    // --- 2. NAVEGACIÓN ENTRE PÁGINAS (CATÁLOGO / PÚBLICAS) ---
     function switchTab(pageId) {
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -389,8 +393,6 @@
       }
     }
 
-
-    // --- 3. CONEXIÓN REAL CON SERVIDOR Y BASE DE DATOS ---
     const API_ENDPOINT = '/api/photos'; 
     const fileInput = document.getElementById('fileInput');
     const selectBtn = document.getElementById('selectBtn');
@@ -445,12 +447,10 @@
       }
     }
 
-    // Cargar Fotos del Usuario
     async function loadPhotosFromServer() {
       try {
         const response = await fetch(API_ENDPOINT);
         if (!response.ok) throw new Error('Error al obtener el catálogo');
-        
         const photos = await response.json(); 
         renderCatalog(photos, photoGrid, fileCounter, false);
       } catch (error) {
@@ -458,12 +458,10 @@
       }
     }
 
-    // Cargar Fotos Públicas
     async function loadPublicPhotosFromServer() {
       try {
         const response = await fetch(`${API_ENDPOINT}/public`);
         if (!response.ok) throw new Error('Error al obtener fotos públicas');
-        
         const publicPhotos = await response.json(); 
         renderCatalog(publicPhotos, publicPhotoGrid, publicFileCounter, true);
       } catch (error) {
@@ -471,7 +469,6 @@
       }
     }
 
-    // Renderizar Fotos
     function renderCatalog(photos, container, counterElement, isPublicView) {
       container.innerHTML = '';
       counterElement.textContent = `${photos.length} archivo${photos.length !== 1 ? 's' : ''}`;
@@ -502,7 +499,6 @@
       });
     }
 
-    // Cambiar estado a Público/Privado en la BD
     async function togglePublic(photoId, shouldBePublic) {
       try {
         const response = await fetch(`${API_ENDPOINT}/${photoId}/public`, {
@@ -518,14 +514,12 @@
       }
     }
 
-    // Copiar enlace público al portapapeles
     function copyShareLink(photoUrl) {
       const fullUrl = window.location.origin + photoUrl;
       navigator.clipboard.writeText(fullUrl);
       alert('¡Enlace de la foto copiado al portapapeles!');
     }
 
-    // Eliminar Foto de la BD
     async function deletePhoto(photoId) {
       try {
         const response = await fetch(`${API_ENDPOINT}/${photoId}`, {
