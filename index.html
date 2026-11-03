@@ -386,7 +386,11 @@
 
   </main>
 
-  <script>
+ <script>
+    // ⚠️ CONFIGURACIÓN: Cambia esto por la URL real de tu backend desplegado en Render (sin barra al final)
+    const API_BASE_URL = 'https://orbita-backend.onrender.com'; 
+    const API_ENDPOINT = `${API_BASE_URL}/api/photos`;
+
     // 1. PANTALLA DE CARGA (2 SEGUNDOS EXACTOS)
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
@@ -400,13 +404,14 @@
 
     // 2. LÓGICA DE TEMA CLARO / OSCURO
     const themeToggleBtn = document.getElementById('themeToggleBtn');
-    
-    themeToggleBtn.addEventListener('click', () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-    });
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
+    }
 
     const savedTheme = localStorage.getItem('theme') || 
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -417,19 +422,37 @@
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
-      document.getElementById(pageId).classList.add('active');
+      const targetPage = document.getElementById(pageId);
+      if (targetPage) targetPage.classList.add('active');
 
       if (pageId === 'catalogPage') {
-        document.getElementById('tabMyCatalog').classList.add('active');
+        const tabMyCatalog = document.getElementById('tabMyCatalog');
+        if (tabMyCatalog) tabMyCatalog.classList.add('active');
         loadPhotosFromServer();
       } else {
-        document.getElementById('tabPublic').classList.add('active');
+        const tabPublic = document.getElementById('tabPublic');
+        if (tabPublic) tabPublic.classList.add('active');
         loadPublicPhotosFromServer();
       }
     }
 
-    // 4. CONEXIÓN API / SERVIDOR
-    const API_ENDPOINT = '/api/photos'; 
+    // 4. GESTIÓN DE MENÚS DESPLEGABLES (Tres puntos)
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('dots-btn')) {
+        e.stopPropagation();
+        // Cerrar otros menús abiertos
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+          if (menu !== e.target.nextElementSibling) menu.classList.remove('show');
+        });
+        const menu = e.target.nextElementSibling;
+        if (menu) menu.classList.toggle('show');
+      } else {
+        // Cerrar al hacer clic fuera
+        document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+      }
+    });
+
+    // 5. CONEXIÓN API / SERVIDOR Y ELEMENTOS DOM
     const fileInput = document.getElementById('fileInput');
     const selectBtn = document.getElementById('selectBtn');
     const dropArea = document.getElementById('dropArea');
@@ -438,29 +461,33 @@
     const fileCounter = document.getElementById('fileCounter');
     const publicFileCounter = document.getElementById('publicFileCounter');
 
-    selectBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      fileInput.click();
-    });
+    if (selectBtn && fileInput) {
+      selectBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.click();
+      });
+    }
 
-    dropArea.addEventListener('click', () => fileInput.click());
-
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-      dropArea.addEventListener(eventName, preventDefaults, false);
-    });
+    if (dropArea && fileInput) {
+      dropArea.addEventListener('click', () => fileInput.click());
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+      dropArea.addEventListener('drop', (e) => {
+        handleFilesUpload(e.dataTransfer.files);
+      });
+    }
 
     function preventDefaults(e) {
       e.preventDefault();
       e.stopPropagation();
     }
 
-    dropArea.addEventListener('drop', (e) => {
-      handleFilesUpload(e.dataTransfer.files);
-    });
-
-    fileInput.addEventListener('change', (e) => {
-      handleFilesUpload(e.target.files);
-    });
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        handleFilesUpload(e.target.files);
+      });
+    }
 
     async function handleFilesUpload(files) {
       if (!files.length) return;
@@ -480,10 +507,12 @@
         loadPhotosFromServer();
       } catch (error) {
         console.error('Error en el servidor:', error);
+        alert('Hubo un error al subir los archivos.');
       }
     }
 
     async function loadPhotosFromServer() {
+      if (!photoGrid) return;
       try {
         const response = await fetch(API_ENDPOINT);
         if (!response.ok) throw new Error('Error al obtener el catálogo');
@@ -495,6 +524,7 @@
     }
 
     async function loadPublicPhotosFromServer() {
+      if (!publicPhotoGrid) return;
       try {
         const response = await fetch(`${API_ENDPOINT}/public`);
         if (!response.ok) throw new Error('Error al obtener fotos públicas');
@@ -505,28 +535,49 @@
       }
     }
 
+    // Renderizador inteligente compatible con cualquier formato (Imágenes, Vídeos, Audios, Archivos)
+    function getFilePreviewHtml(fileName, fileUrl) {
+      const ext = fileName.split('.').pop().toLowerCase();
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
+        return `<img src="${fileUrl}" alt="${fileName}" class="photo-preview">`;
+      } else if (['mp4', 'webm', 'mov', 'ogg'].includes(ext)) {
+        return `<video src="${fileUrl}" class="photo-preview" controls preload="metadata"></video>`;
+      } else if (['mp3', 'wav', 'm4a'].includes(ext)) {
+        return `<div style="padding:20px; text-align:center;"><div style="font-size:30px; margin-bottom:10px;">🎵</div><audio src="${fileUrl}" controls style="width:100%;"></audio></div>`;
+      } else {
+        return `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:rgba(0,0,0,0.05); font-weight:bold; padding:10px; text-align:center;"><span style="font-size:32px; margin-bottom:5px;">📄</span><span style="font-size:12px; word-break:break-all;">${fileName}</span></div>`;
+      }
+    }
+
     function renderCatalog(photos, container, counterElement, isPublicView) {
       container.innerHTML = '';
-      counterElement.textContent = `${photos.length} archivo${photos.length !== 1 ? 's' : ''}`;
+      if (counterElement) {
+        counterElement.textContent = `${photos.length} archivo${photos.length !== 1 ? 's' : ''}`;
+      }
 
       photos.forEach(photo => {
         const card = document.createElement('div');
         card.className = 'photo-card';
+        
+        const previewHtml = getFilePreviewHtml(photo.name, photo.url);
+
         card.innerHTML = `
-          <img src="${photo.url}" alt="${photo.name}" class="photo-preview">
+          <div class="preview-container" style="width:100%; height:150px; overflow:hidden; position:relative;">
+            ${previewHtml}
+          </div>
           <div class="photo-info">
             <span class="photo-name" title="${photo.name}">${photo.name}</span>
-            <div class="menu-container">
-              <button class="dots-btn">&#8942;</button>
+            <div class="menu-container" style="position:relative;">
+              <button class="dots-btn" type="button">&#8942;</button>
               <div class="dropdown-menu">
-                <a href="${photo.url}" download="${photo.name}">Descargar</a>
+                <a href="${photo.url}" download="${photo.name}" target="_blank">Descargar</a>
                 ${!isPublicView ? `
-                  <a onclick="togglePublic('${photo.id}', ${!photo.isPublic})">
+                  <a href="#" onclick="togglePublic('${photo.id}', ${!photo.isPublic}); return false;">
                     ${photo.isPublic ? 'Hacer Privada' : 'Hacer Pública'}
                   </a>
                 ` : ''}
-                ${photo.isPublic ? `<a onclick="copyShareLink('${photo.url}')">Copiar Enlace</a>` : ''}
-                ${!isPublicView ? `<a onclick="deletePhoto('${photo.id}')" class="delete">Eliminar</a>` : ''}
+                ${photo.isPublic ? `<a href="#" onclick="copyShareLink('${photo.url}'); return false;">Copiar Enlace</a>` : ''}
+                ${!isPublicView ? `<a href="#" onclick="deletePhoto('${photo.id}'); return false;" class="delete">Eliminar</a>` : ''}
               </div>
             </div>
           </div>
@@ -551,12 +602,15 @@
     }
 
     function copyShareLink(photoUrl) {
-      const fullUrl = window.location.origin + photoUrl;
-      navigator.clipboard.writeText(fullUrl);
-      alert('¡Enlace de la foto copiado al portapapeles!');
+      navigator.clipboard.writeText(photoUrl).then(() => {
+        alert('¡Enlace de descarga copiado al portapapeles!');
+      }).catch(err => {
+        console.error('Error al copiar enlace', err);
+      });
     }
 
     async function deletePhoto(photoId) {
+      if (!confirm('¿Estás seguro de que deseas eliminar este archivo?')) return;
       try {
         const response = await fetch(`${API_ENDPOINT}/${photoId}`, {
           method: 'DELETE'
