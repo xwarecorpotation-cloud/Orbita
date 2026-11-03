@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Nube - Catálogo</title>
+  <style>
+    /* VARIABLES TEMA CLARO */
+    :root {
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --primary-color: #0061ff;
+      --text-main: #1e1e1e;
+      --text-muted: #6c757d;
+      --border-color: #e9ecef;
+      --btn-bg: #0061ff;
+      --btn-text: #ffffff;
+      --hover-bg: #f0f4ff;
+      --radius: 12px;
+    }
+
+    /* VARIABLES TEMA OSCURO */
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --primary-color: #3b82f6;
+      --text-main: #f8f9fa;
+      --text-muted: #a0aec0;
+      --border-color: #2d3748;
+      --btn-bg: #ffffff;
+      --btn-text: #121212;
+      --hover-bg: #2a2b2d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Header / Navbar */
+    header {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+
+    .logo-img {
+      max-height: 38px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Toggle Theme Button */
+    .theme-toggle-btn {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      padding: 0;
+    }
+
+    .theme-toggle-btn:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .theme-toggle-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* Ocultar según el tema */
+    [data-theme="dark"] .sun-icon { display: block; }
+    [data-theme="dark"] .moon-icon { display: none; }
+    .sun-icon { display: none; }
+    .moon-icon { display: block; }
+
+    /* Main Container */
+    main {
+      max-width: 1200px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Upload Area */
+    .upload-section {
+      background-color: var(--card-bg);
+      border: 2px dashed var(--primary-color);
+      border-radius: var(--radius);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .upload-section:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .upload-btn {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+      display: inline-block;
+    }
+
+    /* Catalog Section */
+    .catalog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Photo Cards */
+    .photo-card {
+      background-color: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .photo-preview {
+      width: 100%;
+      height: 180px;
+      background-color: var(--border-color);
+      object-fit: cover;
+    }
+
+    .photo-info {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .photo-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    /* Menu 3 Puntos */
+    .menu-container {
+      position: relative;
+    }
+
+    .dots-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      color: var(--text-muted);
+    }
+
+    .dots-btn:hover {
+      background-color: var(--hover-bg);
+      color: var(--text-main);
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      bottom: 100%;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-radius: 8px;
+      width: 140px;
+      z-index: 10;
+      padding: 0.5rem 0;
+    }
+
+    .dropdown-menu a {
+      display: block;
+      padding: 0.5rem 1rem;
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+
+    .dropdown-menu a:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .dropdown-menu a.delete {
+      color: #e53e3e;
+    }
+
+    .menu-container:hover .dropdown-menu {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR / HEADER -->
+  <header>
+    <div class="logo-container">
+      <!-- LOGO INTEGRADO -->
+      <img src="https://i.postimg.cc/yNT1Wg6k/WARE-(1).png" alt="Logo WARE" class="logo-img">
+    </div>
+    
+    <!-- BOTÓN TEMA CLARO / OSCURO CON SVGs -->
+    <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Cambiar tema">
+      <!-- Icono Luna -->
+      <svg class="moon-icon" viewBox="0 0 24 24">
+        <path d="M12.3 2a10 10 0 0 0 9.7 11.5 10 10 0 1 1-11.5-9.7 8.8 8.8 0 0 0 1.8-1.8z"/>
+      </svg>
+      <!-- Icono Sol -->
+      <svg class="sun-icon" viewBox="0 0 24 24">
+        <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 17a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0v-2a1 1 0 0 1 1-1zm9-9a1 1 0 0 1-1 1h-2a1 1 0 1 1 0-2h2a1 1 0 0 1 1 1zM5 12a1 1 0 0 1-1 1H2a1 1 0 1 1 0-2h2a1 1 0 0 1 1 1zm14.07-6.07a1 1 0 0 1 0 1.41l-1.41 1.41a1 1 0 1 1-1.41-1.41l1.41-1.41a1 1 0 0 1 1.41 0zM7.76 17.66a1 1 0 0 1 0 1.41l-1.41 1.41a1 1 0 1 1-1.41-1.41l1.41-1.41a1 1 0 0 1 1.41 0zm11.31 11.31a1 1 0 0 1-1.41 0l-1.41-1.41a1 1 0 1 1 1.41-1.41l1.41 1.41a1 1 0 0 1 0 1.41zM7.76 6.34a1 1 0 0 1-1.41 0L4.93 4.93a1 1 0 1 1 1.41-1.41l1.41 1.41a1 1 0 0 1 0 1.41z"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main>
+    
+    <!-- ÁREA DE SUBIDA -->
+    <section class="upload-section" id="dropArea">
+      <h3>Arrastra y suelta tus fotos aquí</h3>
+      <p style="color: var(--text-muted); margin-top: 0.5rem;">o selecciona archivos desde tu ordenador</p>
+      <button class="upload-btn" id="selectBtn">Subir Fotos</button>
+      <input type="file" id="fileInput" hidden multiple accept="image/*">
+    </section>
+
+    <!-- CATÁLOGO DE FOTOS -->
+    <section class="catalog-section">
+      <div class="catalog-header">
+        <h2>Mi Catálogo</h2>
+        <span id="fileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
+      </div>
+
+      <div class="photo-grid" id="photoGrid">
+        <!-- Las fotos cargadas desde el servidor se renderizarán aquí -->
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // --- 1. LÓGICA DE TEMA CLARO / OSCURO ---
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    });
+
+    const savedTheme = localStorage.getItem('theme') || 
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+
+    // --- 2. LOGICA DE CONEXIÓN A SERVIDOR REAL (API / DATABASE) ---
+    const API_ENDPOINT = '/api/photos'; 
+    const fileInput = document.getElementById('fileInput');
+    const selectBtn = document.getElementById('selectBtn');
+    const dropArea = document.getElementById('dropArea');
+    const photoGrid = document.getElementById('photoGrid');
+    const fileCounter = document.getElementById('fileCounter');
+
+    selectBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileInput.click();
+    });
+
+    dropArea.addEventListener('click', () => fileInput.click());
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    dropArea.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      handleFilesUpload(files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFilesUpload(e.target.files);
+    });
+
+    async function handleFilesUpload(files) {
+      if (!files.length) return;
+
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('photos', files[i]);
+      }
+
+      try {
+        const response = await fetch(`${API_ENDPOINT}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Error al subir los archivos');
+
+        loadPhotosFromServer();
+      } catch (error) {
+        console.error('Error en el servidor:', error);
+      }
+    }
+
+    async function loadPhotosFromServer() {
+      try {
+        const response = await fetch(API_ENDPOINT);
+        if (!response.ok) throw new Error('Error al obtener el catálogo');
+        
+        const photos = await response.json(); 
+        renderCatalog(photos);
+      } catch (error) {
+        console.error('Error cargando el catálogo:', error);
+      }
+    }
+
+    function renderCatalog(photos) {
+      photoGrid.innerHTML = '';
+      fileCounter.textContent = `${photos.length} archivo${photos.length !== 1 ? 's' : ''}`;
+
+      photos.forEach(photo => {
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        card.innerHTML = `
+          <img src="${photo.url}" alt="${photo.name}" class="photo-preview">
+          <div class="photo-info">
+            <span class="photo-name" title="${photo.name}">${photo.name}</span>
+            <div class="menu-container">
+              <button class="dots-btn">&#8942;</button>
+              <div class="dropdown-menu">
+                <a href="${photo.url}" download="${photo.name}">Descargar</a>
+                <a href="#" onclick="deletePhoto('${photo.id}')" class="delete">Eliminar</a>
+              </div>
+            </div>
+          </div>
+        `;
+        photoGrid.appendChild(card);
+      });
+    }
+
+    async function deletePhoto(photoId) {
+      try {
+        const response = await fetch(`${API_ENDPOINT}/${photoId}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Error al eliminar');
+
+        loadPhotosFromServer();
+      } catch (error) {
+        console.error('Error al eliminar foto:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadPhotosFromServer);
+  </script>
+</body>
+</html>
