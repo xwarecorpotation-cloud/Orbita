@@ -48,7 +48,7 @@
       min-height: 100vh;
     }
 
-    /* HEADER MILIMÉTRICO Y BLOQUEADO (ALTURA FIJA DE 70PX) */
+    /* HEADER BLOQUEADO A 70PX STRICTOS */
     header {
       background-color: var(--card-bg);
       border-bottom: 1px solid var(--border-color);
@@ -60,11 +60,30 @@
       position: relative;
     }
 
-    /* Pestañas de Navegación */
+    /* LOGO POSICIONADO A LA IZQUIERDA Y MÁS GRANDE (SIN AFECTAR AL HEADER) */
+    .logo-container {
+      display: flex;
+      align-items: center;
+      height: 100%;
+    }
+
+    .logo-img {
+      height: 52px; /* Tamaño más grande controlado quirúrgicamente */
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* NAVEGACIÓN Y ACCIONES */
+    .header-center-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
     .nav-tabs {
       display: flex;
       gap: 0.5rem;
-      z-index: 2;
     }
 
     .tab-btn {
@@ -81,32 +100,6 @@
     .tab-btn.active {
       color: var(--primary-color);
       background-color: var(--hover-bg);
-    }
-
-    /* LOGO CENTRADO ABSOLUTO (IMPOSIBLE QUE ROMPA LA CAJA) */
-    .logo-container {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none; /* Permite clics a través si fuera necesario */
-    }
-
-    .logo-img {
-      height: 38px; /* Tamaño mediano controlado quirúrgicamente */
-      width: auto;
-      object-fit: contain;
-      display: block;
-    }
-
-    /* Acciones Derecha */
-    .header-actions {
-      display: flex;
-      align-items: center;
-      z-index: 2;
     }
 
     .theme-toggle-btn {
@@ -298,19 +291,18 @@
 
   <!-- NAVBAR / HEADER -->
   <header>
-    <!-- Pestañas de Navegación -->
-    <nav class="nav-tabs">
-      <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
-      <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Fotos Públicas</button>
-    </nav>
-
-    <!-- LOGO CENTRADO ABSOLUTO (TAMAÑO MEDIANO Y CONTROLADO) -->
+    <!-- LOGO A LA IZQUIERDA Y MÁS GRANDE (SIN DEFORMAR EL HEADER) -->
     <div class="logo-container">
       <img src="https://i.postimg.cc/Y049Zr6S/WARE-1-removebg-preview.png" alt="Logo WARE" class="logo-img">
     </div>
     
-    <!-- Botón Tema Claro / Oscuro -->
-    <div class="header-actions">
+    <!-- DERECHA: PESTAÑAS Y TEMA -->
+    <div class="header-center-actions">
+      <nav class="nav-tabs">
+        <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
+        <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
+      </nav>
+
       <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Cambiar tema">
         <svg class="moon-icon" viewBox="0 0 24 24">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -351,11 +343,11 @@
       </section>
     </div>
 
-    <!-- PÁGINA 2: FOTOS PÚBLICAS -->
+    <!-- PÁGINA 2: PUBLICADAS -->
     <div class="page-section" id="publicPage">
       <section class="catalog-section">
         <div class="catalog-header">
-          <h2>Fotos Públicas de la Comunidad</h2>
+          <h2>Publicadas</h2>
           <span id="publicFileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
         </div>
         <div class="photo-grid" id="publicPhotoGrid"></div>
