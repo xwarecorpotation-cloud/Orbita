@@ -386,10 +386,17 @@
 
   </main>
 
- <script>
+<script>
     // ⚠️ CONFIGURACIÓN: Cambia esto por la URL real de tu backend desplegado en Render (sin barra al final)
     const API_BASE_URL = 'https://orbita-backend-o24z.onrender.com'; 
     const API_ENDPOINT = `${API_BASE_URL}/api/photos`;
+
+    // 0. GESTIÓN DE SESIÓN ÚNICA POR DISPOSITIVO/NAVEGADOR
+    let sessionId = localStorage.getItem('app_session_id');
+    if (!sessionId) {
+      sessionId = 'session_' + Math.random().toString(36).substring(2) + Date.now();
+      localStorage.setItem('app_session_id', sessionId);
+    }
 
     // 1. PANTALLA DE CARGA (2 SEGUNDOS EXACTOS)
     window.addEventListener('DOMContentLoaded', () => {
@@ -500,6 +507,9 @@
       try {
         const response = await fetch(`${API_ENDPOINT}/upload`, {
           method: 'POST',
+          headers: { 
+            'X-Session-ID': sessionId 
+          },
           body: formData
         });
 
@@ -514,7 +524,11 @@
     async function loadPhotosFromServer() {
       if (!photoGrid) return;
       try {
-        const response = await fetch(API_ENDPOINT);
+        const response = await fetch(API_ENDPOINT, {
+          headers: { 
+            'X-Session-ID': sessionId 
+          }
+        });
         if (!response.ok) throw new Error('Error al obtener el catálogo');
         const photos = await response.json(); 
         renderCatalog(photos, photoGrid, fileCounter, false);
@@ -590,7 +604,10 @@
       try {
         const response = await fetch(`${API_ENDPOINT}/${photoId}/public`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Session-ID': sessionId 
+          },
           body: JSON.stringify({ isPublic: shouldBePublic })
         });
 
@@ -613,7 +630,10 @@
       if (!confirm('¿Estás seguro de que deseas eliminar este archivo?')) return;
       try {
         const response = await fetch(`${API_ENDPOINT}/${photoId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: { 
+            'X-Session-ID': sessionId 
+          }
         });
 
         if (!response.ok) throw new Error('Error al eliminar');
@@ -624,6 +644,4 @@
     }
 
     document.addEventListener('DOMContentLoaded', loadPhotosFromServer);
-  </script>
-</body>
-</html>
+</script>
