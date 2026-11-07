@@ -387,11 +387,11 @@
   </main>
 
 <script>
-    // ⚠️ CONFIGURACIÓN: Cambia esto por la URL real de tu backend desplegado en Render (sin barra al final)
+    // ⚠️ CONFIGURACIÓN: URL de tu backend desplegado en Render
     const API_BASE_URL = 'https://orbita-backend-o24z.onrender.com'; 
     const API_ENDPOINT = `${API_BASE_URL}/api/photos`;
 
-    // 0. GESTIÓN DE SESIÓN ÚNICA POR DISPOSITIVO/NAVEGADOR
+    // 0. GESTIÓN DE SESIÓN ÚNICA Y ESTANCA POR DISPOSITIVO
     let sessionId = localStorage.getItem('app_session_id');
     if (!sessionId) {
       sessionId = 'session_' + Math.random().toString(36).substring(2) + Date.now();
@@ -424,7 +424,7 @@
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // 3. NAVEGACIÓN ENTRE PÁGINAS
+    // 3. NAVEGACIÓN ENTRE PÁGINAS (Catálogo Privado vs. Público)
     function switchTab(pageId) {
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -447,19 +447,17 @@
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('dots-btn')) {
         e.stopPropagation();
-        // Cerrar otros menús abiertos
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
           if (menu !== e.target.nextElementSibling) menu.classList.remove('show');
         });
         const menu = e.target.nextElementSibling;
         if (menu) menu.classList.toggle('show');
       } else {
-        // Cerrar al hacer clic fuera
         document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
       }
     });
 
-    // 5. CONEXIÓN API / SERVIDOR Y ELEMENTOS DOM
+    // 5. REFERENCIAS DE ELEMENTOS DOM
     const fileInput = document.getElementById('fileInput');
     const selectBtn = document.getElementById('selectBtn');
     const dropArea = document.getElementById('dropArea');
@@ -496,6 +494,7 @@
       });
     }
 
+    // 6. FUNCIONES DE COMUNICACIÓN CON LA API
     async function handleFilesUpload(files) {
       if (!files.length) return;
 
@@ -549,7 +548,7 @@
       }
     }
 
-    // Renderizador inteligente compatible con cualquier formato (Imágenes, Vídeos, Audios, Archivos)
+    // 7. RENDERIZADORES Y GESTIÓN VISUAL
     function getFilePreviewHtml(fileName, fileUrl) {
       const ext = fileName.split('.').pop().toLowerCase();
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
@@ -562,8 +561,8 @@
         return `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:rgba(0,0,0,0.05); font-weight:bold; padding:10px; text-align:center;"><span style="font-size:32px; margin-bottom:5px;">📄</span><span style="font-size:12px; word-break:break-all;">${fileName}</span></div>`;
       }
     }
-  
-  function renderCatalog(photos, container, counterElement, isPublicView) {
+
+    function renderCatalog(photos, container, counterElement, isPublicView) {
       container.innerHTML = '';
       if (counterElement) {
         counterElement.textContent = `${photos.length} archivo${photos.length !== 1 ? 's' : ''}`;
@@ -575,7 +574,7 @@
         
         const previewHtml = getFilePreviewHtml(photo.name, photo.url);
 
-        // Si es la vista pública, ocultamos el nombre real del archivo por privacidad
+        // Si es vista pública, se anonimiza el nombre para proteger datos personales/rutas del equipo
         const nameDisplayHtml = isPublicView 
           ? `<span class="photo-name" style="color: var(--text-muted); font-style: italic;">Archivo público</span>` 
           : `<span class="photo-name" title="${photo.name}">${photo.name}</span>`;
@@ -586,37 +585,6 @@
           </div>
           <div class="photo-info">
             ${nameDisplayHtml}
-            <div class="menu-container" style="position:relative;">
-              <button class="dots-btn" type="button">&#8942;</button>
-              <div class="dropdown-menu">
-                <a href="${photo.url}" download="${photo.name}" target="_blank">Descargar</a>
-                ${!isPublicView ? `
-                  <a href="#" onclick="togglePublic('${photo.id}', ${!photo.isPublic}); return false;">
-                    ${photo.isPublic ? 'Hacer Privada' : 'Hacer Pública'}
-                  </a>
-                ` : ''}
-                ${photo.isPublic ? `<a href="#" onclick="copyShareLink('${photo.url}'); return false;">Copiar Enlace</a>` : ''}
-                ${!isPublicView ? `<a href="#" onclick="deletePhoto('${photo.id}'); return false;" class="delete">Eliminar</a>` : ''}
-              </div>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-      photos.forEach(photo => {
-        const card = document.createElement('div');
-        card.className = 'photo-card';
-        
-        const previewHtml = getFilePreviewHtml(photo.name, photo.url);
-
-        card.innerHTML = `
-          <div class="preview-container" style="width:100%; height:150px; overflow:hidden; position:relative;">
-            ${previewHtml}
-          </div>
-          <div class="photo-info">
-            <span class="photo-name" title="${photo.name}">${photo.name}</span>
             <div class="menu-container" style="position:relative;">
               <button class="dots-btn" type="button">&#8942;</button>
               <div class="dropdown-menu">
