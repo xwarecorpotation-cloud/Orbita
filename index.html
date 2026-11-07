@@ -562,12 +562,48 @@
         return `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:rgba(0,0,0,0.05); font-weight:bold; padding:10px; text-align:center;"><span style="font-size:32px; margin-bottom:5px;">📄</span><span style="font-size:12px; word-break:break-all;">${fileName}</span></div>`;
       }
     }
-
-    function renderCatalog(photos, container, counterElement, isPublicView) {
+  
+  function renderCatalog(photos, container, counterElement, isPublicView) {
       container.innerHTML = '';
       if (counterElement) {
         counterElement.textContent = `${photos.length} archivo${photos.length !== 1 ? 's' : ''}`;
       }
+
+      photos.forEach(photo => {
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        
+        const previewHtml = getFilePreviewHtml(photo.name, photo.url);
+
+        // Si es la vista pública, ocultamos el nombre real del archivo por privacidad
+        const nameDisplayHtml = isPublicView 
+          ? `<span class="photo-name" style="color: var(--text-muted); font-style: italic;">Archivo público</span>` 
+          : `<span class="photo-name" title="${photo.name}">${photo.name}</span>`;
+
+        card.innerHTML = `
+          <div class="preview-container" style="width:100%; height:150px; overflow:hidden; position:relative;">
+            ${previewHtml}
+          </div>
+          <div class="photo-info">
+            ${nameDisplayHtml}
+            <div class="menu-container" style="position:relative;">
+              <button class="dots-btn" type="button">&#8942;</button>
+              <div class="dropdown-menu">
+                <a href="${photo.url}" download="${photo.name}" target="_blank">Descargar</a>
+                ${!isPublicView ? `
+                  <a href="#" onclick="togglePublic('${photo.id}', ${!photo.isPublic}); return false;">
+                    ${photo.isPublic ? 'Hacer Privada' : 'Hacer Pública'}
+                  </a>
+                ` : ''}
+                ${photo.isPublic ? `<a href="#" onclick="copyShareLink('${photo.url}'); return false;">Copiar Enlace</a>` : ''}
+                ${!isPublicView ? `<a href="#" onclick="deletePhoto('${photo.id}'); return false;" class="delete">Eliminar</a>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
 
       photos.forEach(photo => {
         const card = document.createElement('div');
