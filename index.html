@@ -540,6 +540,19 @@
           fileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
         }
 
+        // Inyectar tarjeta de subida "+" al principio en la página 1
+        if (catalogPage === 1 && !photoGrid.querySelector('.upload-card')) {
+          const uploadCard = document.createElement('div');
+          uploadCard.className = 'upload-card';
+          uploadCard.innerHTML = `
+            <div class="upload-plus-icon">+</div>
+            <div class="upload-card-text">Subir Archivos</div>
+          `;
+          uploadCard.addEventListener('click', () => {
+            if (fileInput) fileInput.click();
+          });
+          photoGrid.appendChild(uploadCard);
+        }
 
         renderPhotosChunk(photos, photoGrid, false);
         if (catalogHasMore) catalogPage++;
