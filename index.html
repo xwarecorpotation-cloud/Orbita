@@ -398,6 +398,18 @@
       localStorage.setItem('app_session_id', sessionId);
     }
 
+    // VARIABLES DE CONTROL DE PAGINACIÓN E INFINITE SCROLL
+    let catalogPage = 1;
+    let catalogHasMore = true;
+    let catalogLoading = false;
+
+    let publicPage = 1;
+    let publicHasMore = true;
+    let publicLoading = false;
+
+    let currentActiveTab = 'catalogPage';
+    const LIMIT = 20; // Cantidad de archivos por lote
+
     // 1. PANTALLA DE CARGA (2 SEGUNDOS EXACTOS)
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
@@ -426,6 +438,7 @@
 
     // 3. NAVEGACIÓN ENTRE PÁGINAS (Catálogo Privado vs. Público)
     function switchTab(pageId) {
+      currentActiveTab = pageId;
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -435,11 +448,11 @@
       if (pageId === 'catalogPage') {
         const tabMyCatalog = document.getElementById('tabMyCatalog');
         if (tabMyCatalog) tabMyCatalog.classList.add('active');
-        loadPhotosFromServer();
+        resetAndLoadCatalog();
       } else {
         const tabPublic = document.getElementById('tabPublic');
         if (tabPublic) tabPublic.classList.add('active');
-        loadPublicPhotosFromServer();
+        resetAndLoadPublic();
       }
     }
 
@@ -459,34 +472,10 @@
 
     // 5. REFERENCIAS DE ELEMENTOS DOM
     const fileInput = document.getElementById('fileInput');
-    const selectBtn = document.getElementById('selectBtn');
-    const dropArea = document.getElementById('dropArea');
     const photoGrid = document.getElementById('photoGrid');
     const publicPhotoGrid = document.getElementById('publicPhotoGrid');
     const fileCounter = document.getElementById('fileCounter');
     const publicFileCounter = document.getElementById('publicFileCounter');
-
-    if (selectBtn && fileInput) {
-      selectBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        fileInput.click();
-      });
-    }
-
-    if (dropArea && fileInput) {
-      dropArea.addEventListener('click', () => fileInput.click());
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, preventDefaults, false);
-      });
-      dropArea.addEventListener('drop', (e) => {
-        handleFilesUpload(e.dataTransfer.files);
-      });
-    }
-
-    function preventDefaults(e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
 
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
@@ -513,68 +502,127 @@
         });
 
         if (!response.ok) throw new Error('Error al subir los archivos');
-        loadPhotosFromServer();
+        resetAndLoadCatalog();
       } catch (error) {
         console.error('Error en el servidor:', error);
         alert('Hubo un error al subir los archivos.');
       }
     }
 
+    function resetAndLoadCatalog() {
+      catalogPage = 1;
+      catalogHasMore = true;
+      if (photoGrid) photoGrid.innerHTML = '';
+      loadPhotosFromServer();
+    }
+
+    function resetAndLoadPublic() {
+      publicPage = 1;
+      publicHasMore = true;
+      if (publicPhotoGrid) publicPhotoGrid.innerHTML = '';
+      loadPublicPhotosFromServer();
+    }
+
     async function loadPhotosFromServer() {
-      if (!photoGrid) return;
+      if (!photoGrid || catalogLoading || !catalogHasMore) return;
+      catalogLoading = true;
+
       try {
-        const response = await fetch(API_ENDPOINT, {
-          headers: { 
-            'X-Session-ID': sessionId 
-          }
+        const response = await fetch(`${API_ENDPOINT}?page=${catalogPage}&limit=${LIMIT}`, {
+          headers: { 'X-Session-ID': sessionId }
         });
         if (!response.ok) throw new Error('Error al obtener el catálogo');
-        const photos = await response.json(); 
-        renderCatalog(photos, photoGrid, fileCounter, false);
+        
+        const data = await response.json();
+        const photos = Array.isArray(data.photos) ? data.photos : [];
+        catalogHasMore = data.hasMore;
+        const total = data.total !== undefined ? data.total : photos.length;
+
+        if (fileCounter) {
+          fileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
+        }
+
+        // Si es la página 1, inyectamos la tarjeta interactiva "+" de subida al principio
+        if (catalogPage === 1 && !photoGrid.querySelector('.upload-card')) {
+          const uploadCard = document.createElement('div');
+          uploadCard.className = 'upload-card';
+          uploadCard.innerHTML = `
+            <div class="upload-plus-icon">+</div>
+            <div class="upload-card-text">Subir Archivos</div>
+          `;
+          uploadCard.addEventListener('click', () => {
+            if (fileInput) fileInput.click();
+          });
+          photoGrid.appendChild(uploadCard);
+        }
+
+        renderPhotosChunk(photos, photoGrid, false);
+        if (catalogHasMore) catalogPage++;
       } catch (error) {
         console.error('Error cargando catálogo:', error);
+      } finally {
+        catalogLoading = false;
       }
     }
 
     async function loadPublicPhotosFromServer() {
-      if (!publicPhotoGrid) return;
+      if (!publicPhotoGrid || publicLoading || !publicHasMore) return;
+      publicLoading = true;
+
       try {
-        const response = await fetch(`${API_ENDPOINT}/public`);
+        const response = await fetch(`${API_ENDPOINT}/public?page=${publicPage}&limit=${LIMIT}`);
         if (!response.ok) throw new Error('Error al obtener fotos públicas');
-        const publicPhotos = await response.json(); 
-        renderCatalog(publicPhotos, publicPhotoGrid, publicFileCounter, true);
+        
+        const data = await response.json();
+        const photos = Array.isArray(data.photos) ? data.photos : [];
+        publicHasMore = data.hasMore;
+        const total = data.total !== undefined ? data.total : photos.length;
+
+        if (publicFileCounter) {
+          publicFileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
+        }
+
+        renderPhotosChunk(photos, publicPhotoGrid, true);
+        if (publicHasMore) publicPage++;
       } catch (error) {
         console.error('Error cargando fotos públicas:', error);
+      } finally {
+        publicLoading = false;
       }
     }
+
+    // EVENTO DE SCROLL INFINITO (Carga más elementos automáticamente al bajar)
+    window.addEventListener('scroll', () => {
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+      if (scrollTop + clientHeight >= scrollHeight - 300) {
+        if (currentActiveTab === 'catalogPage') {
+          loadPhotosFromServer();
+        } else {
+          loadPublicPhotosFromServer();
+        }
+      }
+    });
 
     // 7. RENDERIZADORES Y GESTIÓN VISUAL
     function getFilePreviewHtml(fileName, fileUrl) {
       const ext = fileName.split('.').pop().toLowerCase();
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
-        return `<img src="${fileUrl}" alt="${fileName}" class="photo-preview">`;
+        return `<img src="${fileUrl}" alt="${fileName}" class="photo-preview" loading="lazy" decoding="async">`;
       } else if (['mp4', 'webm', 'mov', 'ogg'].includes(ext)) {
-        return `<video src="${fileUrl}" class="photo-preview" controls preload="metadata"></video>`;
+        return `<video src="${fileUrl}" class="photo-preview" preload="none"></video>`;
       } else if (['mp3', 'wav', 'm4a'].includes(ext)) {
-        return `<div style="padding:20px; text-align:center;"><div style="font-size:30px; margin-bottom:10px;">🎵</div><audio src="${fileUrl}" controls style="width:100%;"></audio></div>`;
+        return `<div style="padding:20px; text-align:center;"><div style="font-size:30px; margin-bottom:10px;">🎵</div><audio src="${fileUrl}" preload="none" style="width:100%;"></audio></div>`;
       } else {
         return `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:rgba(0,0,0,0.05); font-weight:bold; padding:10px; text-align:center;"><span style="font-size:32px; margin-bottom:5px;">📄</span><span style="font-size:12px; word-break:break-all;">${fileName}</span></div>`;
       }
     }
 
-    function renderCatalog(photos, container, counterElement, isPublicView) {
-      container.innerHTML = '';
-      if (counterElement) {
-        counterElement.textContent = `${photos.length} archivo${photos.length !== 1 ? 's' : ''}`;
-      }
-
+    function renderPhotosChunk(photos, container, isPublicView) {
       photos.forEach(photo => {
         const card = document.createElement('div');
         card.className = 'photo-card';
         
         const previewHtml = getFilePreviewHtml(photo.name, photo.url);
-
-        // Si es vista pública, se anonimiza el nombre para proteger datos personales/rutas del equipo
         const nameDisplayHtml = isPublicView 
           ? `<span class="photo-name" style="color: var(--text-muted); font-style: italic;">Archivo público</span>` 
           : `<span class="photo-name" title="${photo.name}">${photo.name}</span>`;
@@ -616,7 +664,7 @@
         });
 
         if (!response.ok) throw new Error('Error al cambiar visibilidad');
-        loadPhotosFromServer();
+        resetAndLoadCatalog();
       } catch (error) {
         console.error('Error al actualizar visibilidad:', error);
       }
@@ -641,11 +689,11 @@
         });
 
         if (!response.ok) throw new Error('Error al eliminar');
-        loadPhotosFromServer();
+        resetAndLoadCatalog();
       } catch (error) {
         console.error('Error al eliminar foto:', error);
       }
     }
 
-    document.addEventListener('DOMContentLoaded', loadPhotosFromServer);
+    document.addEventListener('DOMContentLoaded', resetAndLoadCatalog);
 </script>
