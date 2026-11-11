@@ -408,9 +408,9 @@
     let publicLoading = false;
 
     let currentActiveTab = 'catalogPage';
-    const LIMIT = 20; // Cantidad de archivos por lote
+    const LIMIT = 20;
 
-    // 1. PANTALLA DE CARGA (2 SEGUNDOS EXACTOS)
+    // 1. PANTALLA DE CARGA
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         const loader = document.getElementById('loader-screen');
@@ -436,7 +436,7 @@
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', savedTheme);
 
-    // 3. NAVEGACIÓN ENTRE PÁGINAS (Catálogo Privado vs. Público)
+    // 3. NAVEGACIÓN ENTRE PÁGINAS
     function switchTab(pageId) {
       currentActiveTab = pageId;
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
@@ -446,17 +446,15 @@
       if (targetPage) targetPage.classList.add('active');
 
       if (pageId === 'catalogPage') {
-        const tabMyCatalog = document.getElementById('tabMyCatalog');
-        if (tabMyCatalog) tabMyCatalog.classList.add('active');
+        document.getElementById('tabMyCatalog')?.classList.add('active');
         resetAndLoadCatalog();
       } else {
-        const tabPublic = document.getElementById('tabPublic');
-        if (tabPublic) tabPublic.classList.add('active');
+        document.getElementById('tabPublic')?.classList.add('active');
         resetAndLoadPublic();
       }
     }
 
-    // 4. GESTIÓN DE MENÚS DESPLEGABLES (Tres puntos)
+    // 4. GESTIÓN DE MENÚS DESPLEGABLES
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('dots-btn')) {
         e.stopPropagation();
@@ -483,7 +481,7 @@
       });
     }
 
-    // 6. FUNCIONES DE COMUNICACIÓN CON LA API
+    // 6. COMUNICACIÓN CON LA API Y PAGINACIÓN
     async function handleFilesUpload(files) {
       if (!files.length) return;
 
@@ -495,9 +493,7 @@
       try {
         const response = await fetch(`${API_ENDPOINT}/upload`, {
           method: 'POST',
-          headers: { 
-            'X-Session-ID': sessionId 
-          },
+          headers: { 'X-Session-ID': sessionId },
           body: formData
         });
 
@@ -534,15 +530,17 @@
         if (!response.ok) throw new Error('Error al obtener el catálogo');
         
         const data = await response.json();
-        const photos = Array.isArray(data.photos) ? data.photos : [];
-        catalogHasMore = data.hasMore;
+        
+        // Extracción segura a prueba de fallos
+        const photos = Array.isArray(data) ? data : (data.photos || []);
+        catalogHasMore = data.hasMore !== undefined ? data.hasMore : false;
         const total = data.total !== undefined ? data.total : photos.length;
 
         if (fileCounter) {
           fileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
         }
 
-        // Si es la página 1, inyectamos la tarjeta interactiva "+" de subida al principio
+        // Inyectar tarjeta de subida "+" al principio en la página 1
         if (catalogPage === 1 && !photoGrid.querySelector('.upload-card')) {
           const uploadCard = document.createElement('div');
           uploadCard.className = 'upload-card';
@@ -574,8 +572,9 @@
         if (!response.ok) throw new Error('Error al obtener fotos públicas');
         
         const data = await response.json();
-        const photos = Array.isArray(data.photos) ? data.photos : [];
-        publicHasMore = data.hasMore;
+        
+        const photos = Array.isArray(data) ? data : (data.photos || []);
+        publicHasMore = data.hasMore !== undefined ? data.hasMore : false;
         const total = data.total !== undefined ? data.total : photos.length;
 
         if (publicFileCounter) {
@@ -591,7 +590,7 @@
       }
     }
 
-    // EVENTO DE SCROLL INFINITO (Carga más elementos automáticamente al bajar)
+    // SCROLL INFINITO
     window.addEventListener('scroll', () => {
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
       if (scrollTop + clientHeight >= scrollHeight - 300) {
@@ -603,7 +602,7 @@
       }
     });
 
-    // 7. RENDERIZADORES Y GESTIÓN VISUAL
+    // 7. RENDERIZADO VISUAL BLINDADO
     function getFilePreviewHtml(fileName, fileUrl) {
       const ext = fileName.split('.').pop().toLowerCase();
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
@@ -618,6 +617,8 @@
     }
 
     function renderPhotosChunk(photos, container, isPublicView) {
+      if (!Array.isArray(photos)) return;
+
       photos.forEach(photo => {
         const card = document.createElement('div');
         card.className = 'photo-card';
@@ -673,9 +674,7 @@
     function copyShareLink(photoUrl) {
       navigator.clipboard.writeText(photoUrl).then(() => {
         alert('¡Enlace de descarga copiado al portapapeles!');
-      }).catch(err => {
-        console.error('Error al copiar enlace', err);
-      });
+      }).catch(err => console.error('Error al copiar enlace', err));
     }
 
     async function deletePhoto(photoId) {
@@ -683,9 +682,7 @@
       try {
         const response = await fetch(`${API_ENDPOINT}/${photoId}`, {
           method: 'DELETE',
-          headers: { 
-            'X-Session-ID': sessionId 
-          }
+          headers: { 'X-Session-ID': sessionId }
         });
 
         if (!response.ok) throw new Error('Error al eliminar');
