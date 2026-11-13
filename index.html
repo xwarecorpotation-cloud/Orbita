@@ -315,6 +315,108 @@
     .menu-container:hover .dropdown-menu {
       display: block;
     }
+
+    /* La tarjeta ya no recorta el menú (ahora tiene una opción más); el preview conserva sus esquinas redondeadas */
+    .photo-card { overflow: visible; }
+    .preview-container { border-radius: var(--radius) var(--radius) 0 0; }
+
+    /* Modal Renombrar */
+    .rename-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 5000;
+    }
+
+    .rename-modal {
+      background-color: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 420px;
+      padding: 1.5rem;
+    }
+
+    .rename-modal h3 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .rename-field {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .rename-input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.65rem 0.75rem;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .rename-input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .rename-ext {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .rename-error {
+      color: #e53e3e;
+      font-size: 0.85rem;
+      margin-top: 0.6rem;
+      min-height: 1.1rem;
+    }
+
+    .rename-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .rename-actions button {
+      padding: 0.55rem 1.1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .rename-cancel {
+      background: none;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .rename-cancel:hover { background-color: var(--hover-bg); }
+
+    .rename-save {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-bg);
+    }
+
+    .rename-save:disabled,
+    .rename-cancel:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -603,16 +705,27 @@
     });
 
     // 7. RENDERIZADO VISUAL BLINDADO
+    // Escapa texto antes de insertarlo en innerHTML (los nombres ahora son editables por el usuario)
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function getFilePreviewHtml(fileName, fileUrl) {
       const ext = fileName.split('.').pop().toLowerCase();
+      const safeName = escapeHtml(fileName);
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
-        return `<img src="${fileUrl}" alt="${fileName}" class="photo-preview" loading="lazy" decoding="async">`;
+        return `<img src="${fileUrl}" alt="${safeName}" class="photo-preview" loading="lazy" decoding="async">`;
       } else if (['mp4', 'webm', 'mov', 'ogg'].includes(ext)) {
         return `<video src="${fileUrl}" class="photo-preview" preload="none"></video>`;
       } else if (['mp3', 'wav', 'm4a'].includes(ext)) {
         return `<div style="padding:20px; text-align:center;"><div style="font-size:30px; margin-bottom:10px;">🎵</div><audio src="${fileUrl}" preload="none" style="width:100%;"></audio></div>`;
       } else {
-        return `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:rgba(0,0,0,0.05); font-weight:bold; padding:10px; text-align:center;"><span style="font-size:32px; margin-bottom:5px;">📄</span><span style="font-size:12px; word-break:break-all;">${fileName}</span></div>`;
+        return `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:rgba(0,0,0,0.05); font-weight:bold; padding:10px; text-align:center;"><span style="font-size:32px; margin-bottom:5px;">📄</span><span style="font-size:12px; word-break:break-all;">${safeName}</span></div>`;
       }
     }
 
@@ -626,7 +739,7 @@
         const previewHtml = getFilePreviewHtml(photo.name, photo.url);
         const nameDisplayHtml = isPublicView 
           ? `<span class="photo-name" style="color: var(--text-muted); font-style: italic;">Archivo público</span>` 
-          : `<span class="photo-name" title="${photo.name}">${photo.name}</span>`;
+          : `<span class="photo-name" title="${escapeHtml(photo.name)}">${escapeHtml(photo.name)}</span>`;
 
         card.innerHTML = `
           <div class="preview-container" style="width:100%; height:150px; overflow:hidden; position:relative;">
@@ -637,18 +750,29 @@
             <div class="menu-container" style="position:relative;">
               <button class="dots-btn" type="button">&#8942;</button>
               <div class="dropdown-menu">
-                <a href="${photo.url}" download="${photo.name}" target="_blank">Descargar</a>
+                <a href="${photo.url}" download="${escapeHtml(photo.name)}" target="_blank">Descargar</a>
                 ${!isPublicView ? `
                   <a href="#" onclick="togglePublic('${photo.id}', ${!photo.isPublic}); return false;">
                     ${photo.isPublic ? 'Hacer Privada' : 'Hacer Pública'}
                   </a>
                 ` : ''}
                 ${photo.isPublic ? `<a href="#" onclick="copyShareLink('${photo.url}'); return false;">Copiar Enlace</a>` : ''}
+                ${!isPublicView ? `<a href="#" class="rename-link">Renombrar</a>` : ''}
                 ${!isPublicView ? `<a href="#" onclick="deletePhoto('${photo.id}'); return false;" class="delete">Eliminar</a>` : ''}
               </div>
             </div>
           </div>
         `;
+        if (!isPublicView) {
+          const renameLink = card.querySelector('.rename-link');
+          if (renameLink) {
+            renameLink.addEventListener('click', (ev) => {
+              ev.preventDefault();
+              ev.stopPropagation();
+              openRenameModal(photo.id, photo.name);
+            });
+          }
+        }
         container.appendChild(card);
       });
     }
@@ -675,6 +799,142 @@
       navigator.clipboard.writeText(photoUrl).then(() => {
         alert('¡Enlace de descarga copiado al portapapeles!');
       }).catch(err => console.error('Error al copiar enlace', err));
+    }
+
+    // 8. RENOMBRAR ARCHIVO
+    // ⚠️ Contrato asumido con el backend (ajusta SOLO esta función si tu ruta/cuerpo es distinto)
+    async function sendRenameRequest(photoId, newName) {
+      return fetch(`${API_ENDPOINT}/${encodeURIComponent(photoId)}/rename`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-ID': sessionId
+        },
+        body: JSON.stringify({ name: newName })
+      });
+    }
+
+    const RENAME_MAX_BASE_LENGTH = 200;
+    const RENAME_FORBIDDEN_CHARS = /[\\\/:*?"<>|\u0000-\u001f]/;
+
+    // Separa "foto.final.jpg" en { base: "foto.final", ext: ".jpg" } (ext vacío si no hay extensión)
+    function splitFileName(fullName) {
+      const idx = fullName.lastIndexOf('.');
+      if (idx <= 0 || idx === fullName.length - 1) return { base: fullName, ext: '' };
+      return { base: fullName.slice(0, idx), ext: fullName.slice(idx) };
+    }
+
+    function closeRenameModal() {
+      const overlay = document.getElementById('renameOverlay');
+      if (overlay) {
+        document.removeEventListener('keydown', overlay._onKeydown);
+        overlay.remove();
+      }
+    }
+
+    function openRenameModal(photoId, currentName) {
+      closeRenameModal();
+      document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+
+      const { base, ext } = splitFileName(String(currentName || ''));
+
+      const overlay = document.createElement('div');
+      overlay.className = 'rename-overlay';
+      overlay.id = 'renameOverlay';
+      overlay.innerHTML = `
+        <div class="rename-modal" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+          <h3 id="renameTitle">Renombrar archivo</h3>
+          <div class="rename-field">
+            <input type="text" class="rename-input" id="renameInput" maxlength="${RENAME_MAX_BASE_LENGTH}" autocomplete="off" spellcheck="false" aria-label="Nuevo nombre">
+            ${ext ? `<span class="rename-ext">${escapeHtml(ext)}</span>` : ''}
+          </div>
+          <div class="rename-error" id="renameError" role="alert"></div>
+          <div class="rename-actions">
+            <button type="button" class="rename-cancel" id="renameCancel">Cancelar</button>
+            <button type="button" class="rename-save" id="renameSave">Guardar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const input = document.getElementById('renameInput');
+      const errorBox = document.getElementById('renameError');
+      const saveBtn = document.getElementById('renameSave');
+      const cancelBtn = document.getElementById('renameCancel');
+      let saving = false;
+
+      input.value = base;
+      input.focus();
+      input.select();
+
+      async function submit() {
+        if (saving) return;
+        errorBox.textContent = '';
+
+        const newBase = input.value.trim();
+        if (!newBase) {
+          errorBox.textContent = 'El nombre no puede estar vacío.';
+          input.focus();
+          return;
+        }
+        if (RENAME_FORBIDDEN_CHARS.test(newBase)) {
+          errorBox.textContent = 'El nombre no puede contener \\ / : * ? " < > |';
+          input.focus();
+          return;
+        }
+        if (/^\.+$/.test(newBase)) {
+          errorBox.textContent = 'Ese nombre no es válido.';
+          input.focus();
+          return;
+        }
+
+        const newName = newBase + ext;
+        if (newName === currentName) {
+          closeRenameModal();
+          return;
+        }
+
+        saving = true;
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        saveBtn.textContent = 'Guardando...';
+
+        try {
+          const response = await sendRenameRequest(photoId, newName);
+          if (!response.ok) {
+            let detail = '';
+            try {
+              const errData = await response.json();
+              detail = errData.error || errData.message || '';
+            } catch (_) { /* respuesta sin JSON */ }
+            throw new Error(detail || `Error ${response.status} al renombrar`);
+          }
+          closeRenameModal();
+          resetAndLoadCatalog();
+        } catch (error) {
+          console.error('Error al renombrar archivo:', error);
+          saving = false;
+          saveBtn.disabled = false;
+          cancelBtn.disabled = false;
+          saveBtn.textContent = 'Guardar';
+          errorBox.textContent = (error && error.message && error.message !== 'Failed to fetch')
+            ? error.message
+            : 'No se pudo renombrar. Revisa tu conexión e inténtalo de nuevo.';
+        }
+      }
+
+      saveBtn.addEventListener('click', submit);
+      cancelBtn.addEventListener('click', () => { if (!saving) closeRenameModal(); });
+      overlay.addEventListener('mousedown', (ev) => {
+        if (ev.target === overlay && !saving) closeRenameModal();
+      });
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); submit(); }
+      });
+      overlay._onKeydown = (ev) => {
+        if (ev.key === 'Escape' && !saving) closeRenameModal();
+      };
+      document.addEventListener('keydown', overlay._onKeydown);
     }
 
     async function deletePhoto(photoId) {
