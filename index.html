@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -18,7 +19,7 @@
       --hover-bg: #f0f4ff;
       --radius: 12px;
     }
-
+ 
     /* VARIABLES TEMA OSCURO */
     [data-theme="dark"] {
       --bg-color: #121212;
@@ -31,7 +32,7 @@
       --btn-text: #121212;
       --hover-bg: #2a2b2d;
     }
-
+ 
     * {
       box-sizing: border-box;
       margin: 0;
@@ -39,7 +40,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     }
-
+ 
     body {
       background-color: var(--bg-color);
       color: var(--text-main);
@@ -48,7 +49,7 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
-
+ 
     /* PANTALLA DE CARGA (SPLASH SCREEN BLANCA - 2 SEGUNDOS) */
     #loader-screen {
       position: fixed;
@@ -64,26 +65,26 @@
       opacity: 1;
       transition: opacity 0.4s ease, visibility 0.4s ease;
     }
-
+ 
     #loader-screen.fade-out {
       opacity: 0;
       visibility: hidden;
     }
-
+ 
     .loader-content {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1.5rem;
     }
-
+ 
     /* LOGO DE TAMAÑO MEDIANO Y SIN ANIMACIÓN */
     .loader-logo {
   width: 250px !important;  /* Pon aquí el ancho exacto en px que quieras */
   height: auto !important;
   max-width: none !important; /* Anula cualquier límite previo */
 }
-
+ 
     /* CÍRCULO DE CARGA (SPINNER) NEGRO Y DE TAMAÑO MEDIANO */
     .spinner {
       width: 40px;
@@ -93,12 +94,12 @@
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
-
+ 
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
+ 
     /* HEADER BLOQUEADO A 70PX STRICTOS (SIN LOGO) */
     header {
       background-color: var(--card-bg);
@@ -109,13 +110,13 @@
       justify-content: space-between;
       align-items: center;
     }
-
+ 
     /* NAVEGACIÓN Y ACCIONES */
     .nav-tabs {
       display: flex;
       gap: 0.5rem;
     }
-
+ 
     .tab-btn {
       background: none;
       border: none;
@@ -126,12 +127,12 @@
       cursor: pointer;
       border-radius: 8px;
     }
-
+ 
     .tab-btn.active {
       color: var(--primary-color);
       background-color: var(--hover-bg);
     }
-
+ 
     .theme-toggle-btn {
       background: none;
       border: 1px solid var(--border-color);
@@ -145,11 +146,11 @@
       color: var(--text-main);
       padding: 0;
     }
-
+ 
     .theme-toggle-btn:hover {
       background-color: var(--hover-bg);
     }
-
+ 
     .theme-toggle-btn svg {
       width: 20px;
       height: 20px;
@@ -159,12 +160,12 @@
       stroke-linecap: round;
       stroke-linejoin: round;
     }
-
+ 
     [data-theme="dark"] .sun-icon { display: block; }
     [data-theme="dark"] .moon-icon { display: none; }
     .sun-icon { display: none; }
     .moon-icon { display: block; }
-
+ 
     /* Main Container */
     main {
       max-width: 1200px;
@@ -175,18 +176,18 @@
       flex-direction: column;
       gap: 2rem;
     }
-
+ 
     /* Secciones / Páginas */
     .page-section {
       display: none;
       flex-direction: column;
       gap: 2rem;
     }
-
+ 
     .page-section.active {
       display: flex;
     }
-
+ 
     /* Upload Area */
     .upload-section {
       background-color: var(--card-bg);
@@ -196,11 +197,11 @@
       text-align: center;
       cursor: pointer;
     }
-
+ 
     .upload-section:hover {
       background-color: var(--hover-bg);
     }
-
+ 
     .upload-btn {
       background-color: var(--btn-bg);
       color: var(--btn-text);
@@ -213,7 +214,7 @@
       margin-top: 1rem;
       display: inline-block;
     }
-
+ 
     /* Catalog Section */
     .catalog-header {
       display: flex;
@@ -221,13 +222,13 @@
       align-items: center;
       margin-bottom: 1rem;
     }
-
+ 
     .photo-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 1.5rem;
     }
-
+ 
     /* Photo Cards */
     .photo-card {
       background-color: var(--card-bg);
@@ -237,21 +238,21 @@
       display: flex;
       flex-direction: column;
     }
-
+ 
     .photo-preview {
       width: 100%;
       height: 180px;
       background-color: var(--border-color);
       object-fit: cover;
     }
-
+ 
     .photo-info {
       padding: 0.75rem 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-
+ 
     .photo-name {
       font-size: 0.9rem;
       font-weight: 500;
@@ -260,12 +261,12 @@
       text-overflow: ellipsis;
       max-width: 130px;
     }
-
+ 
     /* Menu 3 Puntos */
     .menu-container {
       position: relative;
     }
-
+ 
     .dots-btn {
       background: none;
       border: none;
@@ -275,12 +276,12 @@
       border-radius: 4px;
       color: var(--text-muted);
     }
-
+ 
     .dots-btn:hover {
       background-color: var(--hover-bg);
       color: var(--text-main);
     }
-
+ 
     .dropdown-menu {
       display: none;
       position: absolute;
@@ -294,7 +295,7 @@
       z-index: 10;
       padding: 0.5rem 0;
     }
-
+ 
     .dropdown-menu a {
       display: block;
       padding: 0.5rem 1rem;
@@ -303,23 +304,23 @@
       font-size: 0.85rem;
       cursor: pointer;
     }
-
+ 
     .dropdown-menu a:hover {
       background-color: var(--hover-bg);
     }
-
+ 
     .dropdown-menu a.delete {
       color: #e53e3e;
     }
-
+ 
     .menu-container:hover .dropdown-menu {
       display: block;
     }
-
+ 
     /* La tarjeta ya no recorta el menú (ahora tiene una opción más); el preview conserva sus esquinas redondeadas */
     .photo-card { overflow: visible; }
     .preview-container { border-radius: var(--radius) var(--radius) 0 0; }
-
+ 
     /* Modal Renombrar */
     .rename-overlay {
       position: fixed;
@@ -331,7 +332,7 @@
       padding: 1rem;
       z-index: 5000;
     }
-
+ 
     .rename-modal {
       background-color: var(--card-bg);
       color: var(--text-main);
@@ -342,18 +343,18 @@
       max-width: 420px;
       padding: 1.5rem;
     }
-
+ 
     .rename-modal h3 {
       font-size: 1.1rem;
       margin-bottom: 1rem;
     }
-
+ 
     .rename-field {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
-
+ 
     .rename-input {
       flex: 1;
       min-width: 0;
@@ -365,31 +366,31 @@
       border-radius: 8px;
       outline: none;
     }
-
+ 
     .rename-input:focus {
       border-color: var(--primary-color);
     }
-
+ 
     .rename-ext {
       color: var(--text-muted);
       font-size: 0.95rem;
       white-space: nowrap;
     }
-
+ 
     .rename-error {
       color: #e53e3e;
       font-size: 0.85rem;
       margin-top: 0.6rem;
       min-height: 1.1rem;
     }
-
+ 
     .rename-actions {
       display: flex;
       justify-content: flex-end;
       gap: 0.5rem;
       margin-top: 1rem;
     }
-
+ 
     .rename-actions button {
       padding: 0.55rem 1.1rem;
       font-size: 0.9rem;
@@ -397,30 +398,182 @@
       border-radius: 8px;
       cursor: pointer;
     }
-
+ 
     .rename-cancel {
       background: none;
       color: var(--text-main);
       border: 1px solid var(--border-color);
     }
-
+ 
     .rename-cancel:hover { background-color: var(--hover-bg); }
-
+ 
     .rename-save {
       background-color: var(--btn-bg);
       color: var(--btn-text);
       border: 1px solid var(--btn-bg);
     }
-
+ 
     .rename-save:disabled,
     .rename-cancel:disabled {
       opacity: 0.6;
       cursor: not-allowed;
     }
+    /* ===== Acciones del header (candado + tema) ===== */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+ 
+    @media (max-width: 420px) {
+      header { padding: 0 1rem; }
+      .header-actions { gap: 0.5rem; }
+      .tab-btn { padding: 0.5rem 0.7rem; }
+    }
+ 
+    /* ===== Modal Bloquear app con PIN ===== */
+    .lock-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 5000;
+    }
+ 
+    .lock-overlay[hidden],
+    .lock-step[hidden] { display: none; }
+ 
+    .lock-modal {
+      background-color: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 420px;
+      padding: 1.75rem 1.5rem 1.5rem;
+    }
+ 
+    .lock-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+ 
+    .lock-hero {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background-color: var(--hover-bg);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.1rem;
+    }
+ 
+    .lock-hero svg {
+      width: 36px;
+      height: 36px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+ 
+    .lock-modal h3 {
+      font-size: 1.15rem;
+      margin-bottom: 0.6rem;
+    }
+ 
+    .lock-text {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+ 
+    .lock-fields {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      margin-top: 1.2rem;
+      text-align: left;
+    }
+ 
+    .lock-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+ 
+    .lock-input {
+      width: 100%;
+      padding: 0.7rem 0.75rem;
+      font-size: 1.4rem;
+      letter-spacing: 0.6rem;
+      text-align: center;
+      color: var(--text-main);
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+    }
+ 
+    .lock-input:focus { border-color: var(--primary-color); }
+ 
+    .lock-error {
+      color: #e53e3e;
+      font-size: 0.85rem;
+      margin-top: 0.7rem;
+      min-height: 1.1rem;
+    }
+ 
+    .lock-actions {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1.3rem;
+    }
+ 
+    .lock-actions button {
+      padding: 0.55rem 1.1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+ 
+    .lock-secondary {
+      background: none;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+ 
+    .lock-secondary:hover { background-color: var(--hover-bg); }
+ 
+    .lock-primary {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: 1px solid var(--btn-bg);
+    }
+ 
+    .lock-primary:disabled,
+    .lock-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
-
+ 
   <!-- PANTALLA DE CARGA (SPLASH SCREEN BLANCA CON LOGO Y SPINNER NEGRO DEBAJO) -->
   <div id="loader-screen">
     <div class="loader-content">
@@ -428,14 +581,22 @@
       <div class="spinner"></div>
     </div>
   </div>
-
+ 
   <!-- NAVBAR / HEADER (SIN LOGO EN LA BARRA) -->
   <header>
     <nav class="nav-tabs">
       <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
       <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
     </nav>
-
+ 
+    <div class="header-actions">
+    <button class="theme-toggle-btn" id="lockBtn" aria-label="Bloquear la aplicación con PIN" title="Bloquear con PIN">
+      <svg viewBox="0 0 24 24">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+    </button>
+ 
     <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Cambiar tema">
       <svg class="moon-icon" viewBox="0 0 24 24">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -452,8 +613,9 @@
         <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
       </svg>
     </button>
+    </div>
   </header>
-
+ 
   <!-- CONTENIDO PRINCIPAL -->
   <main>
     
@@ -465,7 +627,7 @@
         <button class="upload-btn" id="selectBtn">Subir Fotos</button>
         <input type="file" id="fileInput" hidden multiple accept="image/*">
       </section>
-
+ 
       <section class="catalog-section">
         <div class="catalog-header">
           <h2>Mi Catálogo Privado</h2>
@@ -474,7 +636,7 @@
         <div class="photo-grid" id="photoGrid"></div>
       </section>
     </div>
-
+ 
     <!-- PÁGINA 2: PUBLICADAS -->
     <div class="page-section" id="publicPage">
       <section class="catalog-section">
@@ -485,33 +647,97 @@
         <div class="photo-grid" id="publicPhotoGrid"></div>
       </section>
     </div>
-
+ 
   </main>
-
+ 
+  <!-- MODAL: BLOQUEAR LA APP CON PIN (SOLO FRONTEND POR AHORA) -->
+  <div class="lock-overlay" id="lockOverlay" hidden>
+    <div class="lock-modal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+ 
+      <!-- Paso 1: explicación -->
+      <div class="lock-step" id="lockStepIntro">
+        <div class="lock-hero">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h3 id="lockTitle">Bloquea la aplicación con contraseña</h3>
+        <p class="lock-text">Esto sirve para bloquear la app. Vas a poner un PIN numérico para desbloquearla y mantenerla protegida.</p>
+        <div class="lock-actions">
+          <button type="button" class="lock-secondary" id="lockCancelBtn">Cancelar</button>
+          <button type="button" class="lock-primary" id="lockNextBtn">Siguiente</button>
+        </div>
+      </div>
+ 
+      <!-- Paso 2: nuevo PIN -->
+      <div class="lock-step" id="lockStepPin" hidden>
+        <div class="lock-hero">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h3>Introduce tu nueva contraseña</h3>
+        <p class="lock-text">Elige un PIN de 4 números y repítelo para confirmarlo.</p>
+        <div class="lock-fields">
+          <div>
+            <label class="lock-label" for="lockPin">PIN</label>
+            <input class="lock-input" id="lockPin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" placeholder="••••">
+          </div>
+          <div>
+            <label class="lock-label" for="lockPinConfirm">Repetir PIN</label>
+            <input class="lock-input" id="lockPinConfirm" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="new-password" placeholder="••••">
+          </div>
+        </div>
+        <div class="lock-error" id="lockError" role="alert" style="width:100%;"></div>
+        <div class="lock-actions">
+          <button type="button" class="lock-secondary" id="lockBackBtn">Atrás</button>
+          <button type="button" class="lock-primary" id="lockSaveBtn" disabled>Guardar</button>
+        </div>
+      </div>
+ 
+      <!-- Paso 3: hecho -->
+      <div class="lock-step" id="lockStepDone" hidden>
+        <div class="lock-hero">
+          <svg viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h3>PIN guardado</h3>
+        <p class="lock-text">Tu PIN se ha configurado correctamente.</p>
+        <div class="lock-actions">
+          <button type="button" class="lock-primary" id="lockDoneBtn">Listo</button>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+ 
 <script>
     // ⚠️ CONFIGURACIÓN: URL de tu backend desplegado en Render
     const API_BASE_URL = 'https://orbita-backend-o24z.onrender.com'; 
     const API_ENDPOINT = `${API_BASE_URL}/api/photos`;
-
+ 
     // 0. GESTIÓN DE SESIÓN ÚNICA Y ESTANCA POR DISPOSITIVO
     let sessionId = localStorage.getItem('app_session_id');
     if (!sessionId) {
       sessionId = 'session_' + Math.random().toString(36).substring(2) + Date.now();
       localStorage.setItem('app_session_id', sessionId);
     }
-
+ 
     // VARIABLES DE CONTROL DE PAGINACIÓN E INFINITE SCROLL
     let catalogPage = 1;
     let catalogHasMore = true;
     let catalogLoading = false;
-
+ 
     let publicPage = 1;
     let publicHasMore = true;
     let publicLoading = false;
-
+ 
     let currentActiveTab = 'catalogPage';
     const LIMIT = 20;
-
+ 
     // 1. PANTALLA DE CARGA
     window.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
@@ -522,7 +748,7 @@
         }
       }, 2000); 
     });
-
+ 
     // 2. LÓGICA DE TEMA CLARO / OSCURO
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     if (themeToggleBtn) {
@@ -533,20 +759,20 @@
         localStorage.setItem('theme', newTheme);
       });
     }
-
+ 
     const savedTheme = localStorage.getItem('theme') || 
       (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', savedTheme);
-
+ 
     // 3. NAVEGACIÓN ENTRE PÁGINAS
     function switchTab(pageId) {
       currentActiveTab = pageId;
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
+ 
       const targetPage = document.getElementById(pageId);
       if (targetPage) targetPage.classList.add('active');
-
+ 
       if (pageId === 'catalogPage') {
         document.getElementById('tabMyCatalog')?.classList.add('active');
         resetAndLoadCatalog();
@@ -555,7 +781,7 @@
         resetAndLoadPublic();
       }
     }
-
+ 
     // 4. GESTIÓN DE MENÚS DESPLEGABLES
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('dots-btn')) {
@@ -569,36 +795,36 @@
         document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
       }
     });
-
+ 
     // 5. REFERENCIAS DE ELEMENTOS DOM
     const fileInput = document.getElementById('fileInput');
     const photoGrid = document.getElementById('photoGrid');
     const publicPhotoGrid = document.getElementById('publicPhotoGrid');
     const fileCounter = document.getElementById('fileCounter');
     const publicFileCounter = document.getElementById('publicFileCounter');
-
+ 
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
         handleFilesUpload(e.target.files);
       });
     }
-
+ 
     // 6. COMUNICACIÓN CON LA API Y PAGINACIÓN
     async function handleFilesUpload(files) {
       if (!files.length) return;
-
+ 
       const formData = new FormData();
       for (let i = 0; i < files.length; i++) {
         formData.append('photos', files[i]);
       }
-
+ 
       try {
         const response = await fetch(`${API_ENDPOINT}/upload`, {
           method: 'POST',
           headers: { 'X-Session-ID': sessionId },
           body: formData
         });
-
+ 
         if (!response.ok) throw new Error('Error al subir los archivos');
         resetAndLoadCatalog();
       } catch (error) {
@@ -606,25 +832,25 @@
         alert('Hubo un error al subir los archivos.');
       }
     }
-
+ 
     function resetAndLoadCatalog() {
       catalogPage = 1;
       catalogHasMore = true;
       if (photoGrid) photoGrid.innerHTML = '';
       loadPhotosFromServer();
     }
-
+ 
     function resetAndLoadPublic() {
       publicPage = 1;
       publicHasMore = true;
       if (publicPhotoGrid) publicPhotoGrid.innerHTML = '';
       loadPublicPhotosFromServer();
     }
-
+ 
     async function loadPhotosFromServer() {
       if (!photoGrid || catalogLoading || !catalogHasMore) return;
       catalogLoading = true;
-
+ 
       try {
         const response = await fetch(`${API_ENDPOINT}?page=${catalogPage}&limit=${LIMIT}`, {
           headers: { 'X-Session-ID': sessionId }
@@ -637,11 +863,11 @@
         const photos = Array.isArray(data) ? data : (data.photos || []);
         catalogHasMore = data.hasMore !== undefined ? data.hasMore : false;
         const total = data.total !== undefined ? data.total : photos.length;
-
+ 
         if (fileCounter) {
           fileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
         }
-
+ 
         // Inyectar tarjeta de subida "+" al principio en la página 1
         if (catalogPage === 1 && !photoGrid.querySelector('.upload-card')) {
           const uploadCard = document.createElement('div');
@@ -655,7 +881,7 @@
           });
           photoGrid.appendChild(uploadCard);
         }
-
+ 
         renderPhotosChunk(photos, photoGrid, false);
         if (catalogHasMore) catalogPage++;
       } catch (error) {
@@ -664,11 +890,11 @@
         catalogLoading = false;
       }
     }
-
+ 
     async function loadPublicPhotosFromServer() {
       if (!publicPhotoGrid || publicLoading || !publicHasMore) return;
       publicLoading = true;
-
+ 
       try {
         const response = await fetch(`${API_ENDPOINT}/public?page=${publicPage}&limit=${LIMIT}`);
         if (!response.ok) throw new Error('Error al obtener fotos públicas');
@@ -678,11 +904,11 @@
         const photos = Array.isArray(data) ? data : (data.photos || []);
         publicHasMore = data.hasMore !== undefined ? data.hasMore : false;
         const total = data.total !== undefined ? data.total : photos.length;
-
+ 
         if (publicFileCounter) {
           publicFileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
         }
-
+ 
         renderPhotosChunk(photos, publicPhotoGrid, true);
         if (publicHasMore) publicPage++;
       } catch (error) {
@@ -691,7 +917,7 @@
         publicLoading = false;
       }
     }
-
+ 
     // SCROLL INFINITO
     window.addEventListener('scroll', () => {
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -703,7 +929,7 @@
         }
       }
     });
-
+ 
     // 7. RENDERIZADO VISUAL BLINDADO
     // Escapa texto antes de insertarlo en innerHTML (los nombres ahora son editables por el usuario)
     function escapeHtml(value) {
@@ -714,7 +940,7 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
     }
-
+ 
     function getFilePreviewHtml(fileName, fileUrl) {
       const ext = fileName.split('.').pop().toLowerCase();
       const safeName = escapeHtml(fileName);
@@ -728,10 +954,10 @@
         return `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:rgba(0,0,0,0.05); font-weight:bold; padding:10px; text-align:center;"><span style="font-size:32px; margin-bottom:5px;">📄</span><span style="font-size:12px; word-break:break-all;">${safeName}</span></div>`;
       }
     }
-
+ 
     function renderPhotosChunk(photos, container, isPublicView) {
       if (!Array.isArray(photos)) return;
-
+ 
       photos.forEach(photo => {
         const card = document.createElement('div');
         card.className = 'photo-card';
@@ -740,7 +966,7 @@
         const nameDisplayHtml = isPublicView 
           ? `<span class="photo-name" style="color: var(--text-muted); font-style: italic;">Archivo público</span>` 
           : `<span class="photo-name" title="${escapeHtml(photo.name)}">${escapeHtml(photo.name)}</span>`;
-
+ 
         card.innerHTML = `
           <div class="preview-container" style="width:100%; height:150px; overflow:hidden; position:relative;">
             ${previewHtml}
@@ -776,7 +1002,7 @@
         container.appendChild(card);
       });
     }
-
+ 
     async function togglePublic(photoId, shouldBePublic) {
       try {
         const response = await fetch(`${API_ENDPOINT}/${photoId}/public`, {
@@ -787,20 +1013,20 @@
           },
           body: JSON.stringify({ isPublic: shouldBePublic })
         });
-
+ 
         if (!response.ok) throw new Error('Error al cambiar visibilidad');
         resetAndLoadCatalog();
       } catch (error) {
         console.error('Error al actualizar visibilidad:', error);
       }
     }
-
+ 
     function copyShareLink(photoUrl) {
       navigator.clipboard.writeText(photoUrl).then(() => {
         alert('¡Enlace de descarga copiado al portapapeles!');
       }).catch(err => console.error('Error al copiar enlace', err));
     }
-
+ 
     // 8. RENOMBRAR ARCHIVO
     // ⚠️ Contrato asumido con el backend (ajusta SOLO esta función si tu ruta/cuerpo es distinto)
     async function sendRenameRequest(photoId, newName) {
@@ -813,17 +1039,17 @@
         body: JSON.stringify({ name: newName })
       });
     }
-
+ 
     const RENAME_MAX_BASE_LENGTH = 200;
     const RENAME_FORBIDDEN_CHARS = /[\\\/:*?"<>|\u0000-\u001f]/;
-
+ 
     // Separa "foto.final.jpg" en { base: "foto.final", ext: ".jpg" } (ext vacío si no hay extensión)
     function splitFileName(fullName) {
       const idx = fullName.lastIndexOf('.');
       if (idx <= 0 || idx === fullName.length - 1) return { base: fullName, ext: '' };
       return { base: fullName.slice(0, idx), ext: fullName.slice(idx) };
     }
-
+ 
     function closeRenameModal() {
       const overlay = document.getElementById('renameOverlay');
       if (overlay) {
@@ -831,13 +1057,13 @@
         overlay.remove();
       }
     }
-
+ 
     function openRenameModal(photoId, currentName) {
       closeRenameModal();
       document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
-
+ 
       const { base, ext } = splitFileName(String(currentName || ''));
-
+ 
       const overlay = document.createElement('div');
       overlay.className = 'rename-overlay';
       overlay.id = 'renameOverlay';
@@ -856,21 +1082,21 @@
         </div>
       `;
       document.body.appendChild(overlay);
-
+ 
       const input = document.getElementById('renameInput');
       const errorBox = document.getElementById('renameError');
       const saveBtn = document.getElementById('renameSave');
       const cancelBtn = document.getElementById('renameCancel');
       let saving = false;
-
+ 
       input.value = base;
       input.focus();
       input.select();
-
+ 
       async function submit() {
         if (saving) return;
         errorBox.textContent = '';
-
+ 
         const newBase = input.value.trim();
         if (!newBase) {
           errorBox.textContent = 'El nombre no puede estar vacío.';
@@ -887,18 +1113,18 @@
           input.focus();
           return;
         }
-
+ 
         const newName = newBase + ext;
         if (newName === currentName) {
           closeRenameModal();
           return;
         }
-
+ 
         saving = true;
         saveBtn.disabled = true;
         cancelBtn.disabled = true;
         saveBtn.textContent = 'Guardando...';
-
+ 
         try {
           const response = await sendRenameRequest(photoId, newName);
           if (!response.ok) {
@@ -922,7 +1148,7 @@
             : 'No se pudo renombrar. Revisa tu conexión e inténtalo de nuevo.';
         }
       }
-
+ 
       saveBtn.addEventListener('click', submit);
       cancelBtn.addEventListener('click', () => { if (!saving) closeRenameModal(); });
       overlay.addEventListener('mousedown', (ev) => {
@@ -936,7 +1162,7 @@
       };
       document.addEventListener('keydown', overlay._onKeydown);
     }
-
+ 
     async function deletePhoto(photoId) {
       if (!confirm('¿Estás seguro de que deseas eliminar este archivo?')) return;
       try {
@@ -944,13 +1170,169 @@
           method: 'DELETE',
           headers: { 'X-Session-ID': sessionId }
         });
-
+ 
         if (!response.ok) throw new Error('Error al eliminar');
         resetAndLoadCatalog();
       } catch (error) {
         console.error('Error al eliminar foto:', error);
       }
     }
-
+ 
     document.addEventListener('DOMContentLoaded', resetAndLoadCatalog);
 </script>
+ 
+<script>
+  // BLOQUEO DE LA APP CON PIN — SOLO FRONTEND (el backend se conecta después)
+  (function () {
+    const PIN_LENGTH = 4;
+ 
+    const lockBtn = document.getElementById('lockBtn');
+    const overlay = document.getElementById('lockOverlay');
+    if (!lockBtn || !overlay) return;
+ 
+    const steps = {
+      intro: document.getElementById('lockStepIntro'),
+      pin: document.getElementById('lockStepPin'),
+      done: document.getElementById('lockStepDone')
+    };
+    const cancelBtn = document.getElementById('lockCancelBtn');
+    const nextBtn = document.getElementById('lockNextBtn');
+    const backBtn = document.getElementById('lockBackBtn');
+    const saveBtn = document.getElementById('lockSaveBtn');
+    const doneBtn = document.getElementById('lockDoneBtn');
+    const pinInput = document.getElementById('lockPin');
+    const confirmInput = document.getElementById('lockPinConfirm');
+    const errorBox = document.getElementById('lockError');
+ 
+    let saving = false;
+ 
+    pinInput.maxLength = PIN_LENGTH;
+    confirmInput.maxLength = PIN_LENGTH;
+ 
+    function showStep(name) {
+      Object.keys(steps).forEach(function (key) { steps[key].hidden = key !== name; });
+    }
+ 
+    function setError(msg) { errorBox.textContent = msg || ''; }
+ 
+    function clearPins() {
+      pinInput.value = '';
+      confirmInput.value = '';
+      setError('');
+      saveBtn.disabled = true;
+    }
+ 
+    function openLock() {
+      clearPins();
+      showStep('intro');
+      overlay.hidden = false;
+      nextBtn.focus();
+    }
+ 
+    function closeLock() {
+      if (saving) return;
+      overlay.hidden = true;
+      clearPins();
+      lockBtn.focus();
+    }
+ 
+    function onlyDigits(input) {
+      const clean = input.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
+      if (clean !== input.value) input.value = clean;
+    }
+ 
+    function refreshSaveState() {
+      saveBtn.disabled = saving || pinInput.value.length !== PIN_LENGTH || confirmInput.value.length !== PIN_LENGTH;
+    }
+ 
+    // Punto de conexión con el backend: aquí irá la petición que guarda el PIN en la base de datos.
+    // Por ahora no se envía ni se guarda en ningún sitio.
+    async function saveLockPin(pin) {
+      // TODO BACKEND: await fetch(`${API_BASE_URL}/...`, { method: 'POST', ... })
+      return true;
+    }
+ 
+    async function submitPin() {
+      if (saving) return;
+      const pin = pinInput.value;
+      const confirmPin = confirmInput.value;
+ 
+      if (pin.length !== PIN_LENGTH || !/^\d+$/.test(pin)) {
+        setError('El PIN debe tener ' + PIN_LENGTH + ' números.');
+        return;
+      }
+      if (pin !== confirmPin) {
+        setError('Los PIN no coinciden.');
+        return;
+      }
+ 
+      saving = true;
+      setError('');
+      saveBtn.disabled = true;
+      backBtn.disabled = true;
+      try {
+        await saveLockPin(pin);
+        clearPins();
+        showStep('done');
+        doneBtn.focus();
+      } catch (err) {
+        console.error('Error al guardar el PIN:', err);
+        setError('No se pudo guardar el PIN. Inténtalo de nuevo.');
+      } finally {
+        saving = false;
+        backBtn.disabled = false;
+        refreshSaveState();
+      }
+    }
+ 
+    lockBtn.addEventListener('click', openLock);
+    cancelBtn.addEventListener('click', closeLock);
+    doneBtn.addEventListener('click', closeLock);
+ 
+    nextBtn.addEventListener('click', function () {
+      clearPins();
+      showStep('pin');
+      pinInput.focus();
+    });
+ 
+    backBtn.addEventListener('click', function () {
+      if (saving) return;
+      clearPins();
+      showStep('intro');
+      nextBtn.focus();
+    });
+ 
+    pinInput.addEventListener('input', function () {
+      onlyDigits(pinInput);
+      setError('');
+      refreshSaveState();
+      if (pinInput.value.length === PIN_LENGTH) confirmInput.focus();
+    });
+ 
+    confirmInput.addEventListener('input', function () {
+      onlyDigits(confirmInput);
+      setError('');
+      refreshSaveState();
+    });
+ 
+    pinInput.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); confirmInput.focus(); }
+    });
+ 
+    confirmInput.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); submitPin(); }
+    });
+ 
+    saveBtn.addEventListener('click', submitPin);
+ 
+    overlay.addEventListener('mousedown', function (ev) {
+      if (ev.target === overlay) closeLock();
+    });
+ 
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape' && !overlay.hidden) closeLock();
+    });
+  })();
+</script>
+</body>
+</html>
