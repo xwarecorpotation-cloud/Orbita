@@ -188,33 +188,43 @@
       display: flex;
     }
  
-    /* Upload Area */
-    .upload-section {
+    /* Tarjeta de subida: cuadro con "+" grande en el centro (siempre es la primera del catálogo) */
+    .upload-card {
+      appearance: none;
       background-color: var(--card-bg);
       border: 2px dashed var(--primary-color);
       border-radius: var(--radius);
-      padding: 3rem 2rem;
-      text-align: center;
+      color: var(--primary-color);
+      min-height: 200px;
+      width: 100%;
+      padding: 0;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
- 
-    .upload-section:hover {
+
+    .upload-card:hover,
+    .upload-card:focus-visible,
+    .upload-card.dragging {
       background-color: var(--hover-bg);
+      outline: none;
     }
- 
-    .upload-btn {
-      background-color: var(--btn-bg);
-      color: var(--btn-text);
-      border: none;
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 1rem;
-      display: inline-block;
+
+    .upload-card.dragging {
+      border-style: solid;
     }
- 
+
+    .upload-card svg {
+      width: 72px;
+      height: 72px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      pointer-events: none;
+    }
+
     /* Catalog Section */
     .catalog-header {
       display: flex;
@@ -621,13 +631,9 @@
     
     <!-- PÁGINA 1: MI CATÁLOGO -->
     <div class="page-section active" id="catalogPage">
-      <section class="upload-section" id="dropArea">
-        <h3>Arrastra y suelta tus fotos aquí</h3>
-        <p style="color: var(--text-muted); margin-top: 0.5rem;">o selecciona archivos desde tu ordenador</p>
-        <button class="upload-btn" id="selectBtn">Subir Fotos</button>
-        <input type="file" id="fileInput" hidden multiple accept="image/*">
-      </section>
- 
+      <!-- Acepta cualquier tipo de archivo (imágenes, vídeos, ZIP, etc.) -->
+      <input type="file" id="fileInput" hidden multiple>
+
       <section class="catalog-section">
         <div class="catalog-header">
           <h2>Mi Catálogo Privado</h2>
@@ -805,7 +811,54 @@
  
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
-        handleFilesUpload(e.target.files);
+        const selected = Array.from(e.target.files || []);
+        // Vaciar el input para poder volver a elegir el mismo archivo más tarde
+        e.target.value = '';
+        handleFilesUpload(selected);
+      });
+    }
+
+    // TARJETA DE SUBIDA "+" (cuadro fijo, siempre la primera del catálogo)
+    function ensureUploadCard() {
+      if (!photoGrid || photoGrid.querySelector('.upload-card')) return;
+      const uploadCard = document.createElement('button');
+      uploadCard.type = 'button';
+      uploadCard.className = 'upload-card';
+      uploadCard.setAttribute('aria-label', 'Subir archivos');
+      uploadCard.title = 'Subir archivos';
+      uploadCard.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="12" y1="4" x2="12" y2="20"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+        </svg>
+      `;
+      uploadCard.addEventListener('click', () => {
+        if (fileInput) fileInput.click();
+      });
+      photoGrid.prepend(uploadCard);
+    }
+
+    // ARRASTRAR Y SOLTAR ARCHIVOS SOBRE EL CATÁLOGO (cualquier tipo de archivo)
+    const catalogPageEl = document.getElementById('catalogPage');
+    if (catalogPageEl) {
+      const hasFiles = (ev) => ev.dataTransfer && Array.from(ev.dataTransfer.types || []).includes('Files');
+
+      catalogPageEl.addEventListener('dragover', (ev) => {
+        if (!hasFiles(ev)) return;
+        ev.preventDefault();
+        photoGrid?.querySelector('.upload-card')?.classList.add('dragging');
+      });
+
+      catalogPageEl.addEventListener('dragleave', (ev) => {
+        if (ev.relatedTarget && catalogPageEl.contains(ev.relatedTarget)) return;
+        photoGrid?.querySelector('.upload-card')?.classList.remove('dragging');
+      });
+
+      catalogPageEl.addEventListener('drop', (ev) => {
+        if (!hasFiles(ev)) return;
+        ev.preventDefault();
+        photoGrid?.querySelector('.upload-card')?.classList.remove('dragging');
+        handleFilesUpload(Array.from(ev.dataTransfer.files || []));
       });
     }
  
@@ -837,6 +890,7 @@
       catalogPage = 1;
       catalogHasMore = true;
       if (photoGrid) photoGrid.innerHTML = '';
+      ensureUploadCard();
       loadPhotosFromServer();
     }
  
@@ -868,20 +922,8 @@
           fileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
         }
  
-        // Inyectar tarjeta de subida "+" al principio en la página 1
-        if (catalogPage === 1 && !photoGrid.querySelector('.upload-card')) {
-          const uploadCard = document.createElement('div');
-          uploadCard.className = 'upload-card';
-          uploadCard.innerHTML = `
-            <div class="upload-plus-icon">+</div>
-            <div class="upload-card-text">Subir Archivos</div>
-          `;
-          uploadCard.addEventListener('click', () => {
-            if (fileInput) fileInput.click();
-          });
-          photoGrid.appendChild(uploadCard);
-        }
- 
+        // La tarjeta "+" ya está en el grid (se crea en resetAndLoadCatalog) y no se borra al subir archivos
+        ensureUploadCard();
         renderPhotosChunk(photos, photoGrid, false);
         if (catalogHasMore) catalogPage++;
       } catch (error) {
@@ -944,9 +986,9 @@
     function getFilePreviewHtml(fileName, fileUrl) {
       const ext = fileName.split('.').pop().toLowerCase();
       const safeName = escapeHtml(fileName);
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif', 'bmp'].includes(ext)) {
         return `<img src="${fileUrl}" alt="${safeName}" class="photo-preview" loading="lazy" decoding="async">`;
-      } else if (['mp4', 'webm', 'mov', 'ogg'].includes(ext)) {
+      } else if (['mp4', 'webm', 'mov', 'ogg', 'm4v'].includes(ext)) {
         return `<video src="${fileUrl}" class="photo-preview" preload="none"></video>`;
       } else if (['mp3', 'wav', 'm4a'].includes(ext)) {
         return `<div style="padding:20px; text-align:center;"><div style="font-size:30px; margin-bottom:10px;">🎵</div><audio src="${fileUrl}" preload="none" style="width:100%;"></audio></div>`;
