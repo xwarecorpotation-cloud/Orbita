@@ -580,6 +580,41 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    /* ===== Modal Redactar mensaje privado ===== */
+    .compose-input {
+      width: 100%;
+      padding: 0.7rem 0.75rem;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      color: var(--text-main);
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .compose-input:focus { border-color: var(--primary-color); }
+
+    textarea.compose-input {
+      min-height: 130px;
+      resize: vertical;
+    }
+
+    .compose-counter {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: right;
+      margin-top: 0.25rem;
+    }
+
+    .compose-hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.3rem;
+    }
+
+    .compose-actions-wrap { flex-wrap: wrap; }
   </style>
 </head>
 <body>
@@ -600,6 +635,13 @@
     </nav>
  
     <div class="header-actions">
+    <button class="theme-toggle-btn" id="composeBtn" aria-label="Redactar mensaje privado" title="Redactar mensaje privado">
+      <svg viewBox="0 0 24 24">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+      </svg>
+    </button>
+
     <button class="theme-toggle-btn" id="lockBtn" aria-label="Bloquear la aplicación con PIN" title="Bloquear con PIN">
       <svg viewBox="0 0 24 24">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -656,6 +698,62 @@
  
   </main>
  
+  <!-- MODAL: REDACTAR MENSAJE PRIVADO CON CONTRASEÑA -->
+  <div class="lock-overlay" id="composeOverlay" hidden>
+    <div class="lock-modal" role="dialog" aria-modal="true" aria-labelledby="composeTitle">
+
+      <!-- Paso 1: redactar -->
+      <div class="lock-step" id="composeStepForm">
+        <div class="lock-hero">
+          <svg viewBox="0 0 24 24">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </div>
+        <h3 id="composeTitle">Redactar mensaje privado</h3>
+        <p class="lock-text">Escribe tu mensaje y ponle una contraseña. Se enviará un enlace con el logo y solo se podrá leer con esa contraseña.</p>
+        <div class="lock-fields">
+          <div>
+            <label class="lock-label" for="composeText">Mensaje</label>
+            <textarea class="compose-input" id="composeText" maxlength="5000" placeholder="Escribe aquí tu mensaje..."></textarea>
+            <div class="compose-counter" id="composeCounter">0 / 5000</div>
+          </div>
+          <div>
+            <label class="lock-label" for="composePassword">Contraseña</label>
+            <input class="compose-input" id="composePassword" type="text" maxlength="100" autocomplete="off" spellcheck="false" placeholder="Mínimo 4 caracteres">
+            <div class="compose-hint">Pásasela a la otra persona por otro medio, no junto al enlace.</div>
+          </div>
+        </div>
+        <div class="lock-error" id="composeError" role="alert" style="width:100%;"></div>
+        <div class="lock-actions">
+          <button type="button" class="lock-secondary" id="composeCancelBtn">Cancelar</button>
+          <button type="button" class="lock-primary" id="composeCreateBtn" disabled>Crear enlace</button>
+        </div>
+      </div>
+
+      <!-- Paso 2: enlace listo para compartir -->
+      <div class="lock-step" id="composeStepDone" hidden>
+        <div class="lock-hero">
+          <svg viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h3>Enlace listo</h3>
+        <p class="lock-text">Compártelo por WhatsApp o donde quieras. Quien lo abra tendrá que poner la contraseña que elegiste.</p>
+        <div class="lock-fields">
+          <input class="compose-input" id="composeLink" type="text" readonly aria-label="Enlace del mensaje">
+        </div>
+        <div class="lock-actions compose-actions-wrap">
+          <button type="button" class="lock-secondary" id="composeCopyBtn">Copiar enlace</button>
+          <button type="button" class="lock-secondary" id="composeShareBtn" hidden>Compartir</button>
+          <button type="button" class="lock-secondary" id="composeWhatsappBtn">WhatsApp</button>
+          <button type="button" class="lock-primary" id="composeDoneBtn">Listo</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- MODAL: BLOQUEAR LA APP CON PIN (SOLO FRONTEND POR AHORA) -->
   <div class="lock-overlay" id="lockOverlay" hidden>
     <div class="lock-modal" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
@@ -1373,6 +1471,169 @@
  
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape' && !overlay.hidden) closeLock();
+    });
+  })();
+</script>
+<script>
+  // REDACTAR MENSAJE PRIVADO CON CONTRASEÑA
+  // Usa el backend: POST {API_BASE_URL}/api/messages  ->  { id, url }
+  (function () {
+    const MAX_TEXT = 5000;
+    const MIN_PASSWORD = 4;
+
+    const composeBtn = document.getElementById('composeBtn');
+    const overlay = document.getElementById('composeOverlay');
+    if (!composeBtn || !overlay) return;
+
+    const stepForm = document.getElementById('composeStepForm');
+    const stepDone = document.getElementById('composeStepDone');
+    const textInput = document.getElementById('composeText');
+    const passInput = document.getElementById('composePassword');
+    const counter = document.getElementById('composeCounter');
+    const errorBox = document.getElementById('composeError');
+    const cancelBtn = document.getElementById('composeCancelBtn');
+    const createBtn = document.getElementById('composeCreateBtn');
+    const linkInput = document.getElementById('composeLink');
+    const copyBtn = document.getElementById('composeCopyBtn');
+    const shareBtn = document.getElementById('composeShareBtn');
+    const whatsappBtn = document.getElementById('composeWhatsappBtn');
+    const doneBtn = document.getElementById('composeDoneBtn');
+
+    let creating = false;
+    let currentLink = '';
+
+    if (navigator.share) shareBtn.hidden = false;
+
+    function setError(msg) { errorBox.textContent = msg || ''; }
+
+    function refreshState() {
+      counter.textContent = textInput.value.length + ' / ' + MAX_TEXT;
+      createBtn.disabled = creating || !textInput.value.trim() || passInput.value.length < MIN_PASSWORD;
+    }
+
+    function resetForm() {
+      textInput.value = '';
+      passInput.value = '';
+      currentLink = '';
+      linkInput.value = '';
+      copyBtn.textContent = 'Copiar enlace';
+      createBtn.textContent = 'Crear enlace';
+      setError('');
+      refreshState();
+    }
+
+    function showStep(name) {
+      stepForm.hidden = name !== 'form';
+      stepDone.hidden = name !== 'done';
+    }
+
+    function openCompose() {
+      resetForm();
+      showStep('form');
+      overlay.hidden = false;
+      textInput.focus();
+    }
+
+    function closeCompose() {
+      if (creating) return;
+      overlay.hidden = true;
+      resetForm();
+      composeBtn.focus();
+    }
+
+    async function createMessage() {
+      if (creating) return;
+      const text = textInput.value.trim();
+      const password = passInput.value;
+
+      if (!text) { setError('Escribe un mensaje.'); return; }
+      if (password.length < MIN_PASSWORD) { setError('La contraseña debe tener al menos ' + MIN_PASSWORD + ' caracteres.'); return; }
+
+      creating = true;
+      setError('');
+      createBtn.disabled = true;
+      cancelBtn.disabled = true;
+      createBtn.textContent = 'Creando...';
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
+          body: JSON.stringify({ text: text, password: password })
+        });
+
+        let data = {};
+        try { data = await response.json(); } catch (_) { /* respuesta sin JSON */ }
+        if (!response.ok || !data.url) {
+          throw new Error(data.error || ('Error ' + response.status + ' al crear el mensaje'));
+        }
+
+        currentLink = data.url;
+        linkInput.value = data.url;
+        // Ya no necesitamos el contenido en pantalla
+        textInput.value = '';
+        passInput.value = '';
+        showStep('done');
+        copyBtn.focus();
+      } catch (error) {
+        console.error('Error al crear el mensaje privado:', error);
+        setError((error && error.message && error.message !== 'Failed to fetch')
+          ? error.message
+          : 'No se pudo crear el mensaje. Revisa tu conexión e inténtalo de nuevo.');
+      } finally {
+        creating = false;
+        cancelBtn.disabled = false;
+        createBtn.textContent = 'Crear enlace';
+        refreshState();
+      }
+    }
+
+    async function copyLink() {
+      if (!currentLink) return;
+      try {
+        await navigator.clipboard.writeText(currentLink);
+      } catch (_) {
+        linkInput.select();
+        document.execCommand('copy');
+      }
+      copyBtn.textContent = '¡Copiado!';
+      setTimeout(() => { copyBtn.textContent = 'Copiar enlace'; }, 2000);
+    }
+
+    function shareText() {
+      return 'Te he enviado un mensaje privado. Ábrelo aquí:';
+    }
+
+    composeBtn.addEventListener('click', openCompose);
+    cancelBtn.addEventListener('click', closeCompose);
+    doneBtn.addEventListener('click', closeCompose);
+    createBtn.addEventListener('click', createMessage);
+    copyBtn.addEventListener('click', copyLink);
+
+    whatsappBtn.addEventListener('click', () => {
+      if (!currentLink) return;
+      window.open('https://wa.me/?text=' + encodeURIComponent(shareText() + '\n' + currentLink), '_blank', 'noopener');
+    });
+
+    shareBtn.addEventListener('click', async () => {
+      if (!currentLink || !navigator.share) return;
+      try {
+        await navigator.share({ text: shareText(), url: currentLink });
+      } catch (_) { /* el usuario canceló */ }
+    });
+
+    textInput.addEventListener('input', () => { setError(''); refreshState(); });
+    passInput.addEventListener('input', () => { setError(''); refreshState(); });
+    passInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); createMessage(); }
+    });
+
+    overlay.addEventListener('mousedown', (ev) => {
+      if (ev.target === overlay) closeCompose();
+    });
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && !overlay.hidden) closeCompose();
     });
   })();
 </script>
