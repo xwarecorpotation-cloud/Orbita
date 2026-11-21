@@ -615,6 +615,59 @@
     }
 
     .compose-actions-wrap { flex-wrap: wrap; }
+
+    .compose-file-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
+    }
+
+    .compose-file-row .lock-secondary {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .compose-file-chip {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.82rem;
+      color: var(--text-main);
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    .compose-file-chip[hidden] { display: none; }
+
+    .compose-file-name {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .compose-file-size { color: var(--text-muted); white-space: nowrap; }
+
+    .compose-file-remove {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0.2rem;
+    }
+
+    .compose-file-remove:hover { color: #e53e3e; }
   </style>
 </head>
 <body>
@@ -711,12 +764,22 @@
           </svg>
         </div>
         <h3 id="composeTitle">Redactar mensaje privado</h3>
-        <p class="lock-text">Escribe tu mensaje y ponle una contraseña. Se enviará un enlace con el logo y solo se podrá leer con esa contraseña.</p>
+        <p class="lock-text">Escribe tu mensaje y/o adjunta un archivo (foto, vídeo, documento...). Se enviará un enlace con el logo y solo se podrá abrir con la contraseña que elijas.</p>
         <div class="lock-fields">
           <div>
             <label class="lock-label" for="composeText">Mensaje</label>
             <textarea class="compose-input" id="composeText" maxlength="5000" placeholder="Escribe aquí tu mensaje..."></textarea>
             <div class="compose-counter" id="composeCounter">0 / 5000</div>
+            <input type="file" id="composeFile" hidden>
+            <div class="compose-file-row">
+              <button type="button" class="lock-secondary" id="composeAttachBtn">Adjuntar archivo</button>
+              <div class="compose-file-chip" id="composeFileChip" hidden>
+                <span class="compose-file-name" id="composeFileName"></span>
+                <span class="compose-file-size" id="composeFileSize"></span>
+                <button type="button" class="compose-file-remove" id="composeFileRemove" aria-label="Quitar archivo">&times;</button>
+              </div>
+            </div>
+            <div class="compose-hint">Un archivo por mensaje, hasta 50 MB.</div>
           </div>
           <div>
             <label class="lock-label" for="composePassword">Contraseña</label>
@@ -1480,6 +1543,7 @@
   (function () {
     const MAX_TEXT = 5000;
     const MIN_PASSWORD = 4;
+    const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
     const composeBtn = document.getElementById('composeBtn');
     const overlay = document.getElementById('composeOverlay');
@@ -1498,7 +1562,14 @@
     const shareBtn = document.getElementById('composeShareBtn');
     const whatsappBtn = document.getElementById('composeWhatsappBtn');
     const doneBtn = document.getElementById('composeDoneBtn');
+    const fileInput = document.getElementById('composeFile');
+    const attachBtn = document.getElementById('composeAttachBtn');
+    const fileChip = document.getElementById('composeFileChip');
+    const fileNameEl = document.getElementById('composeFileName');
+    const fileSizeEl = document.getElementById('composeFileSize');
+    const fileRemoveBtn = document.getElementById('composeFileRemove');
 
+    let selectedFile = null;
     let creating = false;
     let currentLink = '';
 
@@ -1508,10 +1579,28 @@
 
     function refreshState() {
       counter.textContent = textInput.value.length + ' / ' + MAX_TEXT;
-      createBtn.disabled = creating || !textInput.value.trim() || passInput.value.length < MIN_PASSWORD;
+      createBtn.disabled = creating || (!textInput.value.trim() && !selectedFile) || passInput.value.length < MIN_PASSWORD;
+    }
+
+    function formatSize(bytes) {
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let i = 0, n = bytes;
+      while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+      return (i === 0 ? n : n.toFixed(1)) + ' ' + units[i];
+    }
+
+    function setFile(file) {
+      selectedFile = file || null;
+      fileInput.value = '';
+      fileChip.hidden = !selectedFile;
+      attachBtn.textContent = selectedFile ? 'Cambiar archivo' : 'Adjuntar archivo';
+      fileNameEl.textContent = selectedFile ? selectedFile.name : '';
+      fileNameEl.title = selectedFile ? selectedFile.name : '';
+      fileSizeEl.textContent = selectedFile ? formatSize(selectedFile.size) : '';
     }
 
     function resetForm() {
+      setFile(null);
       textInput.value = '';
       passInput.value = '';
       currentLink = '';
@@ -1546,20 +1635,26 @@
       const text = textInput.value.trim();
       const password = passInput.value;
 
-      if (!text) { setError('Escribe un mensaje.'); return; }
+      if (!text && !selectedFile) { setError('Escribe un mensaje o adjunta un archivo.'); return; }
       if (password.length < MIN_PASSWORD) { setError('La contraseña debe tener al menos ' + MIN_PASSWORD + ' caracteres.'); return; }
 
       creating = true;
       setError('');
       createBtn.disabled = true;
       cancelBtn.disabled = true;
-      createBtn.textContent = 'Creando...';
+      createBtn.textContent = selectedFile ? 'Subiendo...' : 'Creando...';
 
       try {
+        // multipart/form-data: el navegador pone solo el Content-Type (no lo definimos a mano)
+        const formData = new FormData();
+        formData.append('text', text);
+        formData.append('password', password);
+        if (selectedFile) formData.append('file', selectedFile);
+
         const response = await fetch(`${API_BASE_URL}/api/messages`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-          body: JSON.stringify({ text: text, password: password })
+          headers: { 'X-Session-ID': sessionId },
+          body: formData
         });
 
         let data = {};
@@ -1573,6 +1668,7 @@
         // Ya no necesitamos el contenido en pantalla
         textInput.value = '';
         passInput.value = '';
+        setFile(null);
         showStep('done');
         copyBtn.focus();
       } catch (error) {
@@ -1620,6 +1716,24 @@
       try {
         await navigator.share({ text: shareText(), url: currentLink });
       } catch (_) { /* el usuario canceló */ }
+    });
+
+    attachBtn.addEventListener('click', () => fileInput.click());
+    fileRemoveBtn.addEventListener('click', () => { setFile(null); setError(''); refreshState(); });
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      if (file.size > MAX_FILE_BYTES) {
+        setFile(null);
+        setError('El archivo supera el máximo de 50 MB.');
+      } else if (file.size === 0) {
+        setFile(null);
+        setError('El archivo está vacío.');
+      } else {
+        setFile(file);
+        setError('');
+      }
+      refreshState();
     });
 
     textInput.addEventListener('input', () => { setError(''); refreshState(); });
