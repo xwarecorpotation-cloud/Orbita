@@ -889,7 +889,7 @@
     // 0. GESTIÓN DE SESIÓN ÚNICA Y ESTANCA POR DISPOSITIVO
     let sessionId = localStorage.getItem('app_session_id');
     if (!sessionId) {
-      sessionId = 'session_' + Math.random().toString(36).substring(2) + Date.now();
+      sessionId = 'session_' + (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''));
       localStorage.setItem('app_session_id', sessionId);
     }
  
@@ -1024,27 +1024,119 @@
     }
  
     // 6. COMUNICACIÓN CON LA API Y PAGINACIÓN
+    // Los vídeos se suben DIRECTO a Cloudflare R2 (no pasan por el servidor); el resto, como siempre
+    const VIDEO_TYPES_BY_EXT = { mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', ogg: 'video/ogg', mkv: 'video/x-matroska', avi: 'video/x-msvideo' };
+
+    function getVideoContentType(file) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      if (file.type && file.type.startsWith('video/')) return file.type;
+      if (!file.type && VIDEO_TYPES_BY_EXT[ext]) return VIDEO_TYPES_BY_EXT[ext];
+      return null; // no es vídeo
+    }
+
+    function setUploadToast(text) {
+      let t = document.getElementById('uploadToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'uploadToast';
+        t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(20,20,20,.92);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:99999;max-width:90vw;box-shadow:0 6px 24px rgba(0,0,0,.3);text-align:center;';
+        document.body.appendChild(t);
+      }
+      t.textContent = text;
+    }
+
+    function hideUploadToast() {
+      const t = document.getElementById('uploadToast');
+      if (t) t.remove();
+    }
+
+    function putWithProgress(url, headers, file, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', url);
+        Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error('El almacenamiento respondió ' + xhr.status));
+        xhr.onerror = () => reject(new Error('Fallo de red durante la subida'));
+        xhr.send(file);
+      });
+    }
+
+    async function uploadVideoDirect(file, contentType, label) {
+      const jsonHeaders = { 'Content-Type': 'application/json', 'X-Session-ID': sessionId };
+
+      // Paso 1: permiso de subida
+      const prep = await fetch(`${API_BASE_URL}/api/videos/upload-url`, {
+        method: 'POST',
+        headers: jsonHeaders,
+        body: JSON.stringify({ name: file.name, contentType, size: file.size })
+      });
+      if (!prep.ok) {
+        const err = await prep.json().catch(() => ({}));
+        throw new Error(err.error || 'No se pudo preparar la subida');
+      }
+      const { id, uploadUrl, headers } = await prep.json();
+
+      // Paso 2: subir el archivo directo al almacenamiento, con porcentaje
+      setUploadToast(`${label}: 0%`);
+      await putWithProgress(uploadUrl, headers, file, (pct) => setUploadToast(`${label}: ${pct}%`));
+
+      // Paso 3: confirmar para que aparezca en tu catálogo
+      const done = await fetch(`${API_BASE_URL}/api/videos/complete`, {
+        method: 'POST',
+        headers: jsonHeaders,
+        body: JSON.stringify({ id, name: file.name })
+      });
+      if (!done.ok) {
+        const err = await done.json().catch(() => ({}));
+        throw new Error(err.error || 'No se pudo registrar el vídeo');
+      }
+    }
+
     async function handleFilesUpload(files) {
       if (!files.length) return;
- 
-      const formData = new FormData();
-      for (let i = 0; i < files.length; i++) {
-        formData.append('photos', files[i]);
+
+      const videos = [];
+      const others = [];
+      files.forEach(f => {
+        const ct = getVideoContentType(f);
+        if (ct) videos.push({ file: f, contentType: ct }); else others.push(f);
+      });
+      const errors = [];
+
+      if (others.length) {
+        setUploadToast('Subiendo archivos...');
+        const formData = new FormData();
+        others.forEach(f => formData.append('photos', f));
+        try {
+          const response = await fetch(`${API_ENDPOINT}/upload`, {
+            method: 'POST',
+            headers: { 'X-Session-ID': sessionId },
+            body: formData
+          });
+          if (!response.ok) throw new Error('Error al subir los archivos');
+        } catch (error) {
+          console.error('Error en el servidor:', error);
+          errors.push('Algunos archivos no se pudieron subir');
+        }
       }
- 
-      try {
-        const response = await fetch(`${API_ENDPOINT}/upload`, {
-          method: 'POST',
-          headers: { 'X-Session-ID': sessionId },
-          body: formData
-        });
- 
-        if (!response.ok) throw new Error('Error al subir los archivos');
-        resetAndLoadCatalog();
-      } catch (error) {
-        console.error('Error en el servidor:', error);
-        alert('Hubo un error al subir los archivos.');
+
+      for (let i = 0; i < videos.length; i++) {
+        const { file, contentType } = videos[i];
+        const label = videos.length > 1 ? `Subiendo vídeo ${i + 1}/${videos.length}` : 'Subiendo vídeo';
+        try {
+          await uploadVideoDirect(file, contentType, label);
+        } catch (error) {
+          console.error('Error subiendo vídeo:', error);
+          errors.push(`${file.name}: ${error.message}`);
+        }
       }
+
+      hideUploadToast();
+      resetAndLoadCatalog();
+      if (errors.length) alert('Hubo un problema al subir:\n' + errors.join('\n'));
     }
  
     function resetAndLoadCatalog() {
@@ -1144,6 +1236,10 @@
         .replace(/'/g, '&#39;');
     }
  
+    function withDownload(url) {
+      return url + (url.includes('?') ? '&' : '?') + 'download=1';
+    }
+ 
     function getFilePreviewHtml(fileName, fileUrl) {
       const ext = fileName.split('.').pop().toLowerCase();
       const safeName = escapeHtml(fileName);
@@ -1179,7 +1275,7 @@
             <div class="menu-container" style="position:relative;">
               <button class="dots-btn" type="button">&#8942;</button>
               <div class="dropdown-menu">
-                <a href="${photo.url}" download="${escapeHtml(photo.name)}" target="_blank">Descargar</a>
+                <a href="${withDownload(photo.url)}" download="${escapeHtml(photo.name)}">Descargar</a>
                 ${!isPublicView ? `
                   <a href="#" onclick="togglePublic('${photo.id}', ${!photo.isPublic}); return false;">
                     ${photo.isPublic ? 'Hacer Privada' : 'Hacer Pública'}
