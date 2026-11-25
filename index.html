@@ -17,10 +17,6 @@
       --btn-text: #ffffff;
       --hover-bg: #f0f4ff;
       --radius: 12px;
-      --sidebar-bg: #f5f4ee;
-      --sidebar-hover: rgba(0,0,0,0.06);
-      --sidebar-active: rgba(0,0,0,0.09);
-      --accent: #c96442;
     }
  
     /* VARIABLES TEMA OSCURO */
@@ -34,10 +30,6 @@
       --btn-bg: #ffffff;
       --btn-text: #121212;
       --hover-bg: #2a2b2d;
-      --sidebar-bg: #1c1c1b;
-      --sidebar-hover: rgba(255,255,255,0.07);
-      --sidebar-active: rgba(255,255,255,0.11);
-      --accent: #d97757;
     }
  
     * {
@@ -675,224 +667,6 @@
     }
 
     .compose-file-remove:hover { color: #e53e3e; }
-
-    /* ===== Cabecera: hamburguesa + pestañas ===== */
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      min-width: 0;
-    }
-
-    /* Las imágenes del catálogo se pueden abrir en vista previa */
-    img.photo-preview { cursor: zoom-in; }
-
-    /* ===== Sidebar (estilo Claude) ===== */
-    .sidebar-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      z-index: 4000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.25s ease, visibility 0s linear 0.25s;
-    }
-
-    .sidebar-backdrop.open {
-      opacity: 1;
-      visibility: visible;
-      transition: opacity 0.25s ease, visibility 0s;
-    }
-
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: 280px;
-      max-width: 85vw;
-      background-color: var(--sidebar-bg);
-      color: var(--text-main);
-      border-right: 1px solid var(--border-color);
-      z-index: 4001;
-      display: flex;
-      flex-direction: column;
-      padding: 0.75rem;
-      transform: translateX(-100%);
-      visibility: hidden;
-      transition: transform 0.25s ease, visibility 0s linear 0.25s;
-    }
-
-    .sidebar.open {
-      transform: translateX(0);
-      visibility: visible;
-      transition: transform 0.25s ease, visibility 0s;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.25);
-    }
-
-    .sidebar-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.25rem 0.25rem 0.75rem 0.5rem;
-    }
-
-    .sidebar-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-
-    .sidebar-close {
-      background: none;
-      border: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .sidebar-close:hover {
-      background-color: var(--sidebar-hover);
-      color: var(--text-main);
-    }
-
-    .sidebar-close svg,
-    .new-folder-icon svg,
-    .viewer-close svg {
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .sidebar-close svg { width: 20px; height: 20px; }
-
-    .new-folder-btn {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      padding: 0.55rem 0.6rem;
-      background: none;
-      border: none;
-      border-radius: 10px;
-      color: var(--text-main);
-      font-size: 0.95rem;
-      font-weight: 500;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .new-folder-btn:hover,
-    .new-folder-btn:focus-visible {
-      background-color: var(--sidebar-hover);
-      outline: none;
-    }
-
-    .new-folder-icon {
-      width: 28px;
-      height: 28px;
-      flex: 0 0 28px;
-      border-radius: 50%;
-      background-color: var(--accent);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .new-folder-icon svg { width: 16px; height: 16px; stroke-width: 2.5; }
-
-    /* Navegación dentro del sidebar: solo en pantallas estrechas (donde las pestañas no caben en la cabecera) */
-    .side-nav {
-      display: none;
-      flex-direction: column;
-      gap: 2px;
-      margin-top: 1rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--border-color);
-    }
-
-    .side-nav-item {
-      background: none;
-      border: none;
-      border-radius: 10px;
-      padding: 0.55rem 0.75rem;
-      text-align: left;
-      font-size: 0.92rem;
-      font-weight: 500;
-      color: var(--text-main);
-      cursor: pointer;
-    }
-
-    .side-nav-item:hover { background-color: var(--sidebar-hover); }
-    .side-nav-item.active { background-color: var(--sidebar-active); }
-
-    @media (max-width: 520px) {
-      .header-left .nav-tabs { display: none; }
-      .side-nav { display: flex; }
-    }
-
-    /* ===== Vista previa de imagen ===== */
-    .viewer-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 6000;
-      background: rgba(0,0,0,0.88);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 1rem 1rem;
-      animation: viewerIn 0.2s ease;
-    }
-
-    .viewer-overlay[hidden] { display: none; }
-
-    @keyframes viewerIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .viewer-img {
-      display: block;
-      max-width: calc(100vw - 2rem);
-      max-height: calc(100vh - 5rem);
-      max-height: calc(100dvh - 5rem);
-      object-fit: contain;
-      border-radius: 8px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.5);
-    }
-
-    .viewer-close {
-      position: absolute;
-      top: 0.9rem;
-      right: 0.9rem;
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255,255,255,0.14);
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      padding: 0;
-    }
-
-    .viewer-close:hover,
-    .viewer-close:focus-visible {
-      background: rgba(255,255,255,0.28);
-      outline: none;
-    }
-
-    .viewer-close svg { width: 22px; height: 22px; }
   </style>
 </head>
 <body>
@@ -907,19 +681,10 @@
  
   <!-- NAVBAR / HEADER (SIN LOGO EN LA BARRA) -->
   <header>
-    <div class="header-left">
-      <button class="theme-toggle-btn" id="sidebarToggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="sidebar" title="Menú">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <line x1="4" y1="6" x2="20" y2="6"></line>
-          <line x1="4" y1="12" x2="20" y2="12"></line>
-          <line x1="4" y1="18" x2="20" y2="18"></line>
-        </svg>
-      </button>
-      <nav class="nav-tabs">
-        <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
-        <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
-      </nav>
-    </div>
+    <nav class="nav-tabs">
+      <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
+      <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
+    </nav>
  
     <div class="header-actions">
     <button class="theme-toggle-btn" id="composeBtn" aria-label="Redactar mensaje privado" title="Redactar mensaje privado">
@@ -955,46 +720,6 @@
     </div>
   </header>
  
-  <!-- SIDEBAR (MENÚ HAMBURGUESA) -->
-  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-  <aside class="sidebar" id="sidebar" aria-label="Menú lateral">
-    <div class="sidebar-top">
-      <span class="sidebar-title">Mi Nube</span>
-      <button class="sidebar-close" id="sidebarClose" type="button" aria-label="Cerrar menú">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
-    <button class="new-folder-btn" id="newFolderBtn" type="button">
-      <span class="new-folder-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-      </span>
-      <span>Nueva carpeta</span>
-    </button>
-
-    <nav class="side-nav" aria-label="Secciones">
-      <button class="side-nav-item active" type="button" data-page="catalogPage">Mi Catálogo</button>
-      <button class="side-nav-item" type="button" data-page="publicPage">Publicadas</button>
-    </nav>
-  </aside>
-
-  <!-- VISTA PREVIA DE IMAGEN (no navega a ningún sitio) -->
-  <div class="viewer-overlay" id="viewerOverlay" hidden role="dialog" aria-modal="true" aria-label="Vista previa de la imagen">
-    <button class="viewer-close" id="viewerClose" type="button" aria-label="Cerrar vista previa">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-      </svg>
-    </button>
-    <img class="viewer-img" id="viewerImg" alt="">
-  </div>
-
   <!-- CONTENIDO PRINCIPAL -->
   <main>
     
@@ -1177,7 +902,7 @@
     let publicLoading = false;
  
     let currentActiveTab = 'catalogPage';
-    const LIMIT = 20;
+    const LIMIT = 10;  // archivos que se piden cada vez (el resto se carga al hacer scroll)
  
     // 1. PANTALLA DE CARGA
     window.addEventListener('DOMContentLoaded', () => {
@@ -1211,10 +936,6 @@
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
  
-      document.querySelectorAll('.side-nav-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.page === pageId);
-      });
-
       const targetPage = document.getElementById(pageId);
       if (targetPage) targetPage.classList.add('active');
  
@@ -1365,6 +1086,7 @@
         ensureUploadCard();
         renderPhotosChunk(photos, photoGrid, false);
         if (catalogHasMore) catalogPage++;
+        setTimeout(loadMoreIfScreenNotFull, 0);
       } catch (error) {
         console.error('Error cargando catálogo:', error);
       } finally {
@@ -1392,6 +1114,7 @@
  
         renderPhotosChunk(photos, publicPhotoGrid, true);
         if (publicHasMore) publicPage++;
+        setTimeout(loadMoreIfScreenNotFull, 0);
       } catch (error) {
         console.error('Error cargando fotos públicas:', error);
       } finally {
@@ -1399,6 +1122,14 @@
       }
     }
  
+    // Si los archivos cargados no llenan la pantalla (no hay scroll), pide la siguiente tanda
+    function loadMoreIfScreenNotFull() {
+      const { scrollHeight } = document.documentElement;
+      if (scrollHeight > window.innerHeight + 300) return;
+      if (currentActiveTab === 'catalogPage') loadPhotosFromServer();
+      else loadPublicPhotosFromServer();
+    }
+
     // SCROLL INFINITO
     window.addEventListener('scroll', () => {
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -1411,6 +1142,45 @@
       }
     });
  
+    // REINTENTO AUTOMÁTICO DE IMÁGENES QUE FALLAN AL CARGAR
+    // El backend descifra cada archivo al vuelo; si Render está ocupado o "dormido", alguna
+    // petición falla y el navegador deja el icono de imagen rota sin volver a intentarlo.
+    (function () {
+      const MAX_RETRIES = 4;
+
+      function withCacheBust(base) {
+        return base + (base.includes('?') ? '&' : '?') + '_r=' + Date.now();
+      }
+
+      function showRetryBox(img) {
+        const box = document.createElement('button');
+        box.type = 'button';
+        box.style.cssText = 'width:100%;height:100%;border:0;background:rgba(0,0,0,0.05);color:inherit;cursor:pointer;font-size:12px;';
+        box.innerHTML = '<span style="font-size:28px;display:block;margin-bottom:4px;">🖼️</span>Toca para reintentar';
+        img.style.display = 'none';
+        img.after(box);
+        box.addEventListener('click', () => {
+          // Recargar la lista también renueva los enlaces temporales (caducan a la hora)
+          if (currentActiveTab === 'catalogPage') resetAndLoadCatalog();
+          else resetAndLoadPublic();
+        });
+      }
+
+      // 'error' no burbujea, por eso se escucha en fase de captura
+      document.addEventListener('error', (ev) => {
+        const img = ev.target;
+        if (!(img instanceof HTMLImageElement) || !img.closest('.preview-container')) return;
+        if (!img.dataset.origSrc) img.dataset.origSrc = img.getAttribute('src');
+        const tries = Number(img.dataset.retries || 0);
+        if (tries >= MAX_RETRIES) {
+          showRetryBox(img);
+          return;
+        }
+        img.dataset.retries = String(tries + 1);
+        setTimeout(() => { img.src = withCacheBust(img.dataset.origSrc); }, 800 * (tries + 1));
+      }, true);
+    })();
+
     // 7. RENDERIZADO VISUAL BLINDADO
     // Escapa texto antes de insertarlo en innerHTML (los nombres ahora son editables por el usuario)
     function escapeHtml(value) {
@@ -2026,97 +1796,6 @@
 
     document.addEventListener('keydown', (ev) => {
       if (ev.key === 'Escape' && !overlay.hidden) closeCompose();
-    });
-  })();
-</script>
-<script>
-  // SIDEBAR (HAMBURGUESA) + VISTA PREVIA DE IMAGEN
-  (function () {
-    // ----- Sidebar -----
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('sidebar');
-    const backdrop = document.getElementById('sidebarBackdrop');
-    const closeBtn = document.getElementById('sidebarClose');
-    const newFolderBtn = document.getElementById('newFolderBtn');
-
-    function isSidebarOpen() { return sidebar.classList.contains('open'); }
-
-    function openSidebar() {
-      sidebar.classList.add('open');
-      backdrop.classList.add('open');
-      toggleBtn.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
-      newFolderBtn.focus();
-    }
-
-    function closeSidebar(returnFocus) {
-      if (!isSidebarOpen()) return;
-      sidebar.classList.remove('open');
-      backdrop.classList.remove('open');
-      toggleBtn.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
-      if (returnFocus) toggleBtn.focus();
-    }
-
-    // Punto de conexión: aquí irá la creación real de carpetas cuando el backend las soporte.
-    // Por ahora solo cierra el menú (no se crea ni se guarda nada).
-    function onNewFolder() {
-      // TODO BACKEND / UI: pedir el nombre y crear la carpeta
-      closeSidebar(true);
-    }
-
-    toggleBtn.addEventListener('click', () => { isSidebarOpen() ? closeSidebar(true) : openSidebar(); });
-    closeBtn.addEventListener('click', () => closeSidebar(true));
-    backdrop.addEventListener('click', () => closeSidebar(true));
-    newFolderBtn.addEventListener('click', onNewFolder);
-
-    document.querySelectorAll('.side-nav-item').forEach(item => {
-      item.addEventListener('click', () => {
-        switchTab(item.dataset.page);
-        closeSidebar(true);
-      });
-    });
-
-    // ----- Vista previa de imagen -----
-    const viewer = document.getElementById('viewerOverlay');
-    const viewerImg = document.getElementById('viewerImg');
-    const viewerClose = document.getElementById('viewerClose');
-    let lastFocused = null;
-
-    function openViewer(src, alt) {
-      lastFocused = document.activeElement;
-      viewerImg.alt = alt || '';
-      viewerImg.src = src;
-      viewer.hidden = false;
-      document.body.style.overflow = 'hidden';
-      viewerClose.focus();
-    }
-
-    function closeViewer() {
-      if (viewer.hidden) return;
-      viewer.hidden = true;
-      viewerImg.removeAttribute('src');
-      document.body.style.overflow = '';
-      if (lastFocused && lastFocused.focus) lastFocused.focus();
-      lastFocused = null;
-    }
-
-    // Un solo listener para todas las tarjetas (incluidas las que se cargan después con el scroll infinito)
-    document.addEventListener('click', (ev) => {
-      const img = ev.target.closest && ev.target.closest('img.photo-preview');
-      if (!img || !img.closest('.photo-grid')) return;
-      ev.preventDefault();
-      openViewer(img.currentSrc || img.src, img.alt);
-    });
-
-    viewerClose.addEventListener('click', closeViewer);
-    // Clic en el fondo cierra; clic sobre la propia imagen no
-    viewer.addEventListener('click', (ev) => { if (ev.target !== viewerImg) closeViewer(); });
-
-    document.addEventListener('keydown', (ev) => {
-      if (ev.key !== 'Escape') return;
-      if (!viewer.hidden) closeViewer();
-      else if (isSidebarOpen()) closeSidebar(true);
     });
   })();
 </script>
