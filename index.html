@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -902,7 +903,7 @@
     let publicLoading = false;
  
     let currentActiveTab = 'catalogPage';
-    const LIMIT = 10;  // archivos que se piden cada vez (el resto se carga al hacer scroll)
+    const LIMIT = 20;
  
     // 1. PANTALLA DE CARGA
     window.addEventListener('DOMContentLoaded', () => {
@@ -1086,7 +1087,6 @@
         ensureUploadCard();
         renderPhotosChunk(photos, photoGrid, false);
         if (catalogHasMore) catalogPage++;
-        setTimeout(loadMoreIfScreenNotFull, 0);
       } catch (error) {
         console.error('Error cargando catálogo:', error);
       } finally {
@@ -1114,7 +1114,6 @@
  
         renderPhotosChunk(photos, publicPhotoGrid, true);
         if (publicHasMore) publicPage++;
-        setTimeout(loadMoreIfScreenNotFull, 0);
       } catch (error) {
         console.error('Error cargando fotos públicas:', error);
       } finally {
@@ -1122,14 +1121,6 @@
       }
     }
  
-    // Si los archivos cargados no llenan la pantalla (no hay scroll), pide la siguiente tanda
-    function loadMoreIfScreenNotFull() {
-      const { scrollHeight } = document.documentElement;
-      if (scrollHeight > window.innerHeight + 300) return;
-      if (currentActiveTab === 'catalogPage') loadPhotosFromServer();
-      else loadPublicPhotosFromServer();
-    }
-
     // SCROLL INFINITO
     window.addEventListener('scroll', () => {
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
