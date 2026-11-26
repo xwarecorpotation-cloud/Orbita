@@ -654,6 +654,38 @@
       cursor: not-allowed;
     }
 
+    /* ===== Pantalla de bloqueo al entrar (se muestra tras la pantalla de carga si hay PIN) ===== */
+    .app-lock-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 99998;
+      background-color: var(--bg-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .app-lock-screen[hidden] { display: none; }
+    .app-lock-card {
+      background-color: var(--card-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+      width: 100%;
+      max-width: 380px;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .app-lock-card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .app-lock-card .lock-input { margin-top: 1.2rem; }
+    body.app-locked { overflow: hidden; }
+    body.app-locked header,
+    body.app-locked main { visibility: hidden; }
+
     /* ===== Modal Redactar mensaje privado ===== */
     .compose-input {
       width: 100%;
@@ -753,6 +785,22 @@
     </div>
   </div>
  
+  <!-- PANTALLA DE BLOQUEO: aparece bajo la pantalla de carga cuando esta sesión tiene PIN -->
+  <div class="app-lock-screen" id="appLockScreen" hidden>
+    <div class="app-lock-card" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
+      <div class="lock-hero">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <h3 id="appLockTitle">Aplicación bloqueada</h3>
+      <p class="lock-text">Introduce tu PIN para poder continuar.</p>
+      <input class="lock-input" id="appLockPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="PIN">
+      <div class="lock-error" id="appLockError" role="alert"></div>
+    </div>
+  </div>
+
   <!-- NAVBAR / HEADER (SIN LOGO EN LA BARRA) -->
   <header>
     <nav class="nav-tabs">
@@ -910,6 +958,30 @@
         </div>
       </div>
  
+      <!-- Paso extra: ya hay un PIN (cambiarlo o quitarlo) -->
+      <div class="lock-step" id="lockStepManage" hidden>
+        <div class="lock-hero">
+          <svg viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h3>Tu app está protegida con PIN</h3>
+        <p class="lock-text">Introduce tu PIN actual para cambiarlo o quitarlo.</p>
+        <div class="lock-fields">
+          <div>
+            <label class="lock-label" for="lockCurrentPin">PIN actual</label>
+            <input class="lock-input" id="lockCurrentPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
+          </div>
+        </div>
+        <div class="lock-error" id="lockManageError" role="alert" style="width:100%;"></div>
+        <div class="lock-actions" style="flex-wrap:wrap;">
+          <button type="button" class="lock-secondary" id="lockManageClose">Cerrar</button>
+          <button type="button" class="lock-secondary" id="lockRemoveBtn">Quitar PIN</button>
+          <button type="button" class="lock-primary" id="lockChangeBtn">Cambiar PIN</button>
+        </div>
+      </div>
+
       <!-- Paso 2: nuevo PIN -->
       <div class="lock-step" id="lockStepPin" hidden>
         <div class="lock-hero">
@@ -944,8 +1016,8 @@
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
-        <h3>PIN guardado</h3>
-        <p class="lock-text">Tu PIN se ha configurado correctamente.</p>
+        <h3 id="lockDoneTitle">PIN guardado</h3>
+        <p class="lock-text" id="lockDoneText">Tu PIN se ha configurado correctamente.</p>
         <div class="lock-actions">
           <button type="button" class="lock-primary" id="lockDoneBtn">Listo</button>
         </div>
@@ -980,15 +1052,97 @@
 
     const MAX_PHOTO_UPLOAD_BYTES = 55 * 1024 * 1024;  // el backend corta las subidas de más de 60 MB
  
-    // 1. PANTALLA DE CARGA
-    window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        const loader = document.getElementById('loader-screen');
-        if (loader) {
-          loader.classList.add('fade-out');
-          setTimeout(() => loader.remove(), 400); 
+    // 1. PANTALLA DE CARGA + COMPROBACIÓN DEL PIN
+    // Mientras se ve la pantalla de carga se pregunta al servidor si esta sesión tiene PIN.
+    // Si lo tiene, al desaparecer la carga queda la pantalla de bloqueo hasta poner el PIN correcto.
+    window.appLock = { hasPin: null };
+    const appLockScreen = document.getElementById('appLockScreen');
+    const appLockPin = document.getElementById('appLockPin');
+    const appLockError = document.getElementById('appLockError');
+    let appUnlocking = false;
+
+    async function fetchLockStatus() {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/lock`, {
+          headers: { 'X-Session-ID': sessionId },
+          signal: controller.signal
+        });
+        if (!res.ok) throw new Error('Estado ' + res.status);
+        const data = await res.json();
+        window.appLock.hasPin = !!data.hasPin;
+        localStorage.setItem('app_has_pin', data.hasPin ? '1' : '0');
+      } catch (e) {
+        // Sin respuesta del servidor: se usa lo último que se supo en este dispositivo
+        window.appLock.hasPin = localStorage.getItem('app_has_pin') === '1' ? true : null;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    const lockStatusPromise = fetchLockStatus();
+
+    function showAppLockScreen() {
+      if (!appLockScreen) return;
+      document.body.classList.add('app-locked');
+      appLockScreen.hidden = false;
+      if (appLockPin) {
+        appLockPin.value = '';
+        setTimeout(() => appLockPin.focus(), 450);
+      }
+    }
+
+    async function tryUnlock() {
+      if (appUnlocking || !appLockPin) return;
+      const pin = appLockPin.value;
+      if (!/^\d{4}$/.test(pin)) return;
+      appUnlocking = true;
+      appLockPin.disabled = true;
+      appLockError.textContent = '';
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/lock/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
+          body: JSON.stringify({ pin })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          appLockScreen.hidden = true;
+          document.body.classList.remove('app-locked');
+          appLockPin.value = '';
+          return;
         }
-      }, 2000); 
+        appLockError.textContent = data.error || 'PIN incorrecto.';
+      } catch (e) {
+        appLockError.textContent = 'No se pudo conectar. Inténtalo de nuevo.';
+      } finally {
+        appUnlocking = false;
+        appLockPin.disabled = false;
+        if (!appLockScreen.hidden) {
+          appLockPin.value = '';
+          appLockPin.focus();
+        }
+      }
+    }
+
+    if (appLockPin) {
+      appLockPin.addEventListener('input', () => {
+        const clean = appLockPin.value.replace(/\D/g, '').slice(0, 4);
+        if (clean !== appLockPin.value) appLockPin.value = clean;
+        appLockError.textContent = '';
+        if (clean.length === 4) tryUnlock();
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Mínimo 2 s de pantalla de carga, y se espera (máx. 8 s) a saber si hay PIN
+      await Promise.all([new Promise(r => setTimeout(r, 2000)), lockStatusPromise]);
+      if (window.appLock.hasPin) showAppLockScreen();
+      const loader = document.getElementById('loader-screen');
+      if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(() => loader.remove(), 400);
+      }
     });
  
     // 2. LÓGICA DE TEMA CLARO / OSCURO
@@ -1573,8 +1727,17 @@
     const steps = {
       intro: document.getElementById('lockStepIntro'),
       pin: document.getElementById('lockStepPin'),
-      done: document.getElementById('lockStepDone')
+      done: document.getElementById('lockStepDone'),
+      manage: document.getElementById('lockStepManage')
     };
+    const manageCurrent = document.getElementById('lockCurrentPin');
+    const manageError = document.getElementById('lockManageError');
+    const manageCloseBtn = document.getElementById('lockManageClose');
+    const removeBtn = document.getElementById('lockRemoveBtn');
+    const changeBtn = document.getElementById('lockChangeBtn');
+    const doneTitle = document.getElementById('lockDoneTitle');
+    const doneText = document.getElementById('lockDoneText');
+    let changeCurrentPin = '';
     const cancelBtn = document.getElementById('lockCancelBtn');
     const nextBtn = document.getElementById('lockNextBtn');
     const backBtn = document.getElementById('lockBackBtn');
@@ -1598,15 +1761,24 @@
     function clearPins() {
       pinInput.value = '';
       confirmInput.value = '';
+      manageCurrent.value = '';
+      manageError.textContent = '';
       setError('');
       saveBtn.disabled = true;
     }
  
-    function openLock() {
+    async function openLock() {
       clearPins();
-      showStep('intro');
+      changeCurrentPin = '';
       overlay.hidden = false;
-      nextBtn.focus();
+      if (window.appLock.hasPin === null) await fetchLockStatus();
+      if (window.appLock.hasPin) {
+        showStep('manage');
+        manageCurrent.focus();
+      } else {
+        showStep('intro');
+        nextBtn.focus();
+      }
     }
  
     function closeLock() {
@@ -1625,13 +1797,25 @@
       saveBtn.disabled = saving || pinInput.value.length !== PIN_LENGTH || confirmInput.value.length !== PIN_LENGTH;
     }
  
-    // Punto de conexión con el backend: aquí irá la petición que guarda el PIN en la base de datos.
-    // Por ahora no se envía ni se guarda en ningún sitio.
-    async function saveLockPin(pin) {
-      // TODO BACKEND: await fetch(`${API_BASE_URL}/...`, { method: 'POST', ... })
-      return true;
+    function friendlyError(err) {
+      return (err && err.message && err.message !== 'Failed to fetch')
+        ? err.message
+        : 'No se pudo conectar. Inténtalo de nuevo.';
     }
- 
+
+    // Guarda el PIN en el backend (que lo guarda como hash en la base de datos)
+    async function saveLockPin(pin) {
+      const res = await fetch(`${API_BASE_URL}/api/lock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
+        body: JSON.stringify({ pin, currentPin: changeCurrentPin || undefined })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'No se pudo guardar el PIN.');
+      window.appLock.hasPin = true;
+      localStorage.setItem('app_has_pin', '1');
+    }
+
     async function submitPin() {
       if (saving) return;
       const pin = pinInput.value;
@@ -1652,12 +1836,15 @@
       backBtn.disabled = true;
       try {
         await saveLockPin(pin);
+        changeCurrentPin = '';
         clearPins();
+        doneTitle.textContent = 'PIN guardado';
+        doneText.textContent = 'Tu PIN se ha configurado correctamente. Se pedirá cada vez que entres a la app.';
         showStep('done');
         doneBtn.focus();
       } catch (err) {
         console.error('Error al guardar el PIN:', err);
-        setError('No se pudo guardar el PIN. Inténtalo de nuevo.');
+        setError(friendlyError(err));
       } finally {
         saving = false;
         backBtn.disabled = false;
@@ -1677,10 +1864,82 @@
  
     backBtn.addEventListener('click', function () {
       if (saving) return;
+      changeCurrentPin = '';
       clearPins();
-      showStep('intro');
-      nextBtn.focus();
+      if (window.appLock.hasPin) {
+        showStep('manage');
+        manageCurrent.focus();
+      } else {
+        showStep('intro');
+        nextBtn.focus();
+      }
     });
+
+    // ----- Ya hay un PIN: cambiarlo o quitarlo (siempre pidiendo el PIN actual) -----
+    manageCurrent.addEventListener('input', function () {
+      const clean = manageCurrent.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
+      if (clean !== manageCurrent.value) manageCurrent.value = clean;
+      manageError.textContent = '';
+    });
+
+    function setManageBusy(busy) {
+      removeBtn.disabled = busy;
+      changeBtn.disabled = busy;
+      manageCloseBtn.disabled = busy;
+    }
+
+    async function postLock(path, body) {
+      const res = await fetch(`${API_BASE_URL}/api/lock/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'PIN incorrecto.');
+    }
+
+    changeBtn.addEventListener('click', async function () {
+      const current = manageCurrent.value;
+      if (current.length !== PIN_LENGTH) { manageError.textContent = 'Introduce tu PIN actual (' + PIN_LENGTH + ' números).'; return; }
+      manageError.textContent = '';
+      setManageBusy(true);
+      try {
+        await postLock('verify', { pin: current });
+        changeCurrentPin = current;
+        clearPins();
+        showStep('pin');
+        pinInput.focus();
+      } catch (err) {
+        manageError.textContent = friendlyError(err);
+        manageCurrent.value = '';
+      } finally {
+        setManageBusy(false);
+      }
+    });
+
+    removeBtn.addEventListener('click', async function () {
+      const current = manageCurrent.value;
+      if (current.length !== PIN_LENGTH) { manageError.textContent = 'Introduce tu PIN actual (' + PIN_LENGTH + ' números).'; return; }
+      manageError.textContent = '';
+      setManageBusy(true);
+      try {
+        await postLock('remove', { pin: current });
+        window.appLock.hasPin = false;
+        localStorage.setItem('app_has_pin', '0');
+        clearPins();
+        doneTitle.textContent = 'PIN eliminado';
+        doneText.textContent = 'La app ya no pedirá PIN al entrar.';
+        showStep('done');
+        doneBtn.focus();
+      } catch (err) {
+        manageError.textContent = friendlyError(err);
+        manageCurrent.value = '';
+      } finally {
+        setManageBusy(false);
+      }
+    });
+
+    manageCloseBtn.addEventListener('click', closeLock);
  
     pinInput.addEventListener('input', function () {
       onlyDigits(pinInput);
