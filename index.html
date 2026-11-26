@@ -326,6 +326,48 @@
       display: block;
     }
  
+    /* VISTA PREVIA: al tocar una imagen se agranda dentro de la propia página (no redirige ni sube nada) */
+    .preview-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      animation: previewFade 0.15s ease;
+    }
+    @keyframes previewFade { from { opacity: 0; } to { opacity: 1; } }
+    .preview-overlay img,
+    .preview-overlay video {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #000;
+    }
+    .preview-close {
+      position: absolute;
+      top: max(14px, env(safe-area-inset-top));
+      right: 14px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+      font-size: 1.6rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-close:hover { background: rgba(255, 255, 255, 0.28); }
+    .preview-container img.photo-preview,
+    .preview-container video.photo-preview { cursor: zoom-in; }
+
     /* Marcadores de carga (esqueleto): se ven mientras llegan los siguientes 10 archivos */
     .skeleton-card {
       background-color: var(--card-bg);
@@ -1285,8 +1327,59 @@
             });
           }
         }
+        // Tocar la imagen (o el vídeo) abre la vista previa agrandada
+        const media = card.querySelector('.preview-container img, .preview-container video');
+        if (media) {
+          media.addEventListener('click', () => openPreview(photo.name, photo.url, media.tagName === 'VIDEO'));
+        }
         container.appendChild(card);
       });
+    }
+
+    // VISTA PREVIA AGRANDADA (solo para ver: no redirige ni sube nada)
+    function closePreview() {
+      const overlay = document.getElementById('previewOverlay');
+      if (!overlay) return;
+      document.removeEventListener('keydown', overlay._onKeydown);
+      overlay.remove();
+      document.body.style.overflow = '';
+    }
+
+    function openPreview(name, url, isVideo) {
+      closePreview();
+      const overlay = document.createElement('div');
+      overlay.className = 'preview-overlay';
+      overlay.id = 'previewOverlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', 'Vista previa');
+
+      const media = document.createElement(isVideo ? 'video' : 'img');
+      media.src = url;
+      if (isVideo) {
+        media.controls = true;
+        media.autoplay = true;
+        media.playsInline = true;
+      } else {
+        media.alt = name || 'Vista previa';
+      }
+
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'preview-close';
+      closeBtn.setAttribute('aria-label', 'Cerrar vista previa');
+      closeBtn.innerHTML = '&times;';
+      closeBtn.addEventListener('click', closePreview);
+
+      // Tocar fuera de la imagen también la cierra
+      overlay.addEventListener('click', (ev) => { if (ev.target === overlay) closePreview(); });
+      overlay._onKeydown = (ev) => { if (ev.key === 'Escape') closePreview(); };
+      document.addEventListener('keydown', overlay._onKeydown);
+
+      overlay.appendChild(media);
+      overlay.appendChild(closeBtn);
+      document.body.appendChild(overlay);
+      document.body.style.overflow = 'hidden';
     }
  
     async function togglePublic(photoId, shouldBePublic) {
