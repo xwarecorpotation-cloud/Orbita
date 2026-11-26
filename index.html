@@ -326,6 +326,38 @@
       display: block;
     }
  
+    /* Marcadores de carga (esqueleto): se ven mientras llegan los siguientes 10 archivos */
+    .skeleton-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      height: 222px;
+      position: relative;
+      overflow: hidden;
+    }
+    .skeleton-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(128,128,128,0.18), transparent);
+      transform: translateX(-100%);
+      animation: shimmer 1.2s infinite;
+    }
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+    .grid-message {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      padding: 1.5rem 0;
+    }
+
+    .upload-progress {
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
     /* La tarjeta ya no recorta el menú (ahora tiene una opción más); el preview conserva sus esquinas redondeadas */
     .photo-card { overflow: visible; }
     .preview-container { border-radius: var(--radius) var(--radius) 0 0; }
@@ -684,6 +716,7 @@
     <nav class="nav-tabs">
       <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
       <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
+      <button class="tab-btn" id="tabVideos" onclick="switchTab('videosPage')">Vídeos</button>
     </nav>
  
     <div class="header-actions">
@@ -748,6 +781,19 @@
       </section>
     </div>
  
+    <!-- PÁGINA 3: VÍDEOS (subida directa a R2 desde el navegador) -->
+    <div class="page-section" id="videosPage">
+      <input type="file" id="videoInput" accept="video/*" hidden multiple>
+
+      <section class="catalog-section">
+        <div class="catalog-header">
+          <h2>Mis Vídeos</h2>
+          <span id="videoCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 vídeos</span>
+        </div>
+        <div class="photo-grid" id="videoGrid"></div>
+      </section>
+    </div>
+
   </main>
  
   <!-- MODAL: REDACTAR MENSAJE PRIVADO CON CONTRASEÑA -->
@@ -902,7 +948,15 @@
     let publicLoading = false;
  
     let currentActiveTab = 'catalogPage';
-    const LIMIT = 20;
+    const LIMIT = 10;  // archivos que se piden cada vez (el resto se carga al hacer scroll)
+
+    // VÍDEOS (R2): el backend devuelve la lista completa; aquí se pintan de 10 en 10
+    const API_VIDEOS = `${API_BASE_URL}/api/videos`;
+    let videosAll = [];
+    let videosShown = 0;
+    let videosLoading = false;
+    let videosUnavailable = false;
+    const MAX_PHOTO_UPLOAD_BYTES = 55 * 1024 * 1024;  // el backend corta las subidas de más de 60 MB
  
     // 1. PANTALLA DE CARGA
     window.addEventListener('DOMContentLoaded', () => {
@@ -942,6 +996,9 @@
       if (pageId === 'catalogPage') {
         document.getElementById('tabMyCatalog')?.classList.add('active');
         resetAndLoadCatalog();
+      } else if (pageId === 'videosPage') {
+        document.getElementById('tabVideos')?.classList.add('active');
+        loadVideosFromServer();
       } else {
         document.getElementById('tabPublic')?.classList.add('active');
         resetAndLoadPublic();
@@ -1023,29 +1080,46 @@
     }
  
     // 6. COMUNICACIÓN CON LA API Y PAGINACIÓN
+    // Se sube de uno en uno: el backend limita cada petición a 60 MB, así que un lote grande en una sola petición fallaría.
+    let uploadingFiles = false;
     async function handleFilesUpload(files) {
-      if (!files.length) return;
- 
-      const formData = new FormData();
-      for (let i = 0; i < files.length; i++) {
-        formData.append('photos', files[i]);
-      }
- 
+      if (!files.length || uploadingFiles) return;
+      uploadingFiles = true;
+
+      const tooBig = files.filter(f => f.size > MAX_PHOTO_UPLOAD_BYTES);
+      const valid = files.filter(f => f.size <= MAX_PHOTO_UPLOAD_BYTES);
+      const failed = [];
+
       try {
-        const response = await fetch(`${API_ENDPOINT}/upload`, {
-          method: 'POST',
-          headers: { 'X-Session-ID': sessionId },
-          body: formData
-        });
- 
-        if (!response.ok) throw new Error('Error al subir los archivos');
+        for (let i = 0; i < valid.length; i++) {
+          if (fileCounter) {
+            fileCounter.innerHTML = `<span class="upload-progress">Subiendo ${i + 1} de ${valid.length}...</span>`;
+          }
+          const formData = new FormData();
+          formData.append('photos', valid[i]);
+          try {
+            const response = await fetch(`${API_ENDPOINT}/upload`, {
+              method: 'POST',
+              headers: { 'X-Session-ID': sessionId },
+              body: formData
+            });
+            if (!response.ok) throw new Error('Error al subir ' + valid[i].name);
+          } catch (error) {
+            console.error('Error en el servidor:', error);
+            failed.push(valid[i].name);
+          }
+        }
+      } finally {
+        uploadingFiles = false;
         resetAndLoadCatalog();
-      } catch (error) {
-        console.error('Error en el servidor:', error);
-        alert('Hubo un error al subir los archivos.');
       }
+
+      const problems = [];
+      if (tooBig.length) problems.push('Superan los 55 MB (para archivos grandes usa la pestaña Vídeos si son vídeos):\n- ' + tooBig.map(f => f.name).join('\n- '));
+      if (failed.length) problems.push('No se pudieron subir:\n- ' + failed.join('\n- '));
+      if (problems.length) alert(problems.join('\n\n'));
     }
- 
+
     function resetAndLoadCatalog() {
       catalogPage = 1;
       catalogHasMore = true;
@@ -1064,6 +1138,7 @@
     async function loadPhotosFromServer() {
       if (!photoGrid || catalogLoading || !catalogHasMore) return;
       catalogLoading = true;
+      const skeletons = addSkeletons(photoGrid);
  
       try {
         const response = await fetch(`${API_ENDPOINT}?page=${catalogPage}&limit=${LIMIT}`, {
@@ -1086,9 +1161,11 @@
         ensureUploadCard();
         renderPhotosChunk(photos, photoGrid, false);
         if (catalogHasMore) catalogPage++;
+        setTimeout(loadMoreIfScreenNotFull, 0);
       } catch (error) {
         console.error('Error cargando catálogo:', error);
       } finally {
+        removeSkeletons(skeletons);
         catalogLoading = false;
       }
     }
@@ -1096,6 +1173,7 @@
     async function loadPublicPhotosFromServer() {
       if (!publicPhotoGrid || publicLoading || !publicHasMore) return;
       publicLoading = true;
+      const skeletons = addSkeletons(publicPhotoGrid);
  
       try {
         const response = await fetch(`${API_ENDPOINT}/public?page=${publicPage}&limit=${LIMIT}`);
@@ -1113,23 +1191,48 @@
  
         renderPhotosChunk(photos, publicPhotoGrid, true);
         if (publicHasMore) publicPage++;
+        setTimeout(loadMoreIfScreenNotFull, 0);
       } catch (error) {
         console.error('Error cargando fotos públicas:', error);
       } finally {
+        removeSkeletons(skeletons);
         publicLoading = false;
       }
     }
  
+    // Marcadores de carga mientras llegan los siguientes archivos
+    function addSkeletons(container, count = 6) {
+      const nodes = [];
+      for (let i = 0; i < count; i++) {
+        const sk = document.createElement('div');
+        sk.className = 'skeleton-card';
+        container.appendChild(sk);
+        nodes.push(sk);
+      }
+      return nodes;
+    }
+
+    function removeSkeletons(nodes) {
+      nodes.forEach(n => n.remove());
+    }
+
+    function loadMoreForActiveTab() {
+      if (currentActiveTab === 'catalogPage') loadPhotosFromServer();
+      else if (currentActiveTab === 'videosPage') renderMoreVideos();
+      else loadPublicPhotosFromServer();
+    }
+
+    // Si los archivos cargados no llenan la pantalla (no hay scroll), pide la siguiente tanda
+    function loadMoreIfScreenNotFull() {
+      const { scrollHeight } = document.documentElement;
+      if (scrollHeight > window.innerHeight + 300) return;
+      loadMoreForActiveTab();
+    }
+
     // SCROLL INFINITO
     window.addEventListener('scroll', () => {
       const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-      if (scrollTop + clientHeight >= scrollHeight - 300) {
-        if (currentActiveTab === 'catalogPage') {
-          loadPhotosFromServer();
-        } else {
-          loadPublicPhotosFromServer();
-        }
-      }
+      if (scrollTop + clientHeight >= scrollHeight - 300) loadMoreForActiveTab();
     });
  
     // 7. RENDERIZADO VISUAL BLINDADO
@@ -1143,6 +1246,11 @@
         .replace(/'/g, '&#39;');
     }
  
+    // El backend fuerza la descarga con ?download=1 (el atributo "download" no funciona entre dominios distintos)
+    function withDownloadParam(url) {
+      return url + (url.includes('?') ? '&' : '?') + 'download=1';
+    }
+
     function getFilePreviewHtml(fileName, fileUrl) {
       const ext = fileName.split('.').pop().toLowerCase();
       const safeName = escapeHtml(fileName);
@@ -1178,7 +1286,7 @@
             <div class="menu-container" style="position:relative;">
               <button class="dots-btn" type="button">&#8942;</button>
               <div class="dropdown-menu">
-                <a href="${photo.url}" download="${escapeHtml(photo.name)}" target="_blank">Descargar</a>
+                <a href="${escapeHtml(withDownloadParam(photo.url))}" target="_blank" rel="noopener">Descargar</a>
                 ${!isPublicView ? `
                   <a href="#" onclick="togglePublic('${photo.id}', ${!photo.isPublic}); return false;">
                     ${photo.isPublic ? 'Hacer Privada' : 'Hacer Pública'}
@@ -1381,6 +1489,195 @@
     }
  
     document.addEventListener('DOMContentLoaded', resetAndLoadCatalog);
+
+    // 9. VÍDEOS (Cloudflare R2)
+    // Flujo: POST /api/videos/upload-url -> el navegador hace PUT directo a R2 -> GET /api/videos para listarlos.
+    const videoGrid = document.getElementById('videoGrid');
+    const videoCounter = document.getElementById('videoCounter');
+    const videoInput = document.getElementById('videoInput');
+
+    const VIDEO_TYPES_BY_EXT = {
+      mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm',
+      mkv: 'video/x-matroska', avi: 'video/x-msvideo', ogv: 'video/ogg', '3gp': 'video/3gpp'
+    };
+
+    function guessVideoType(file) {
+      if (file.type && file.type.startsWith('video/')) return file.type;
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      return VIDEO_TYPES_BY_EXT[ext] || '';
+    }
+
+    function formatBytes(bytes) {
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let i = 0, n = bytes || 0;
+      while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+      return (i === 0 ? n : n.toFixed(1)) + ' ' + units[i];
+    }
+
+    function ensureVideoUploadCard() {
+      if (!videoGrid || videoGrid.querySelector('.upload-card')) return;
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'upload-card';
+      card.setAttribute('aria-label', 'Subir vídeos');
+      card.title = 'Subir vídeos';
+      card.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="12" y1="4" x2="12" y2="20"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+        </svg>
+      `;
+      card.addEventListener('click', () => { if (videoInput) videoInput.click(); });
+      videoGrid.prepend(card);
+    }
+
+    function setVideoCounter(total) {
+      if (videoCounter) videoCounter.textContent = `${total} vídeo${total !== 1 ? 's' : ''}`;
+    }
+
+    async function loadVideosFromServer() {
+      if (!videoGrid || videosLoading) return;
+      videosLoading = true;
+      videoGrid.innerHTML = '';
+      videosAll = [];
+      videosShown = 0;
+      videosUnavailable = false;
+      ensureVideoUploadCard();
+      const skeletons = addSkeletons(videoGrid, 3);
+
+      try {
+        const response = await fetch(API_VIDEOS, { headers: { 'X-Session-ID': sessionId } });
+        if (response.status === 503) {
+          videosUnavailable = true;
+          removeSkeletons(skeletons);
+          videoGrid.querySelector('.upload-card')?.remove();
+          videoGrid.insertAdjacentHTML('beforeend', '<div class="grid-message">Los vídeos no están configurados en el servidor todavía.</div>');
+          setVideoCounter(0);
+          return;
+        }
+        if (!response.ok) throw new Error('Error al obtener los vídeos');
+        const data = await response.json();
+        videosAll = Array.isArray(data) ? data : [];
+        setVideoCounter(videosAll.length);
+        removeSkeletons(skeletons);
+        renderMoreVideos();
+      } catch (error) {
+        console.error('Error cargando vídeos:', error);
+        removeSkeletons(skeletons);
+        videoGrid.insertAdjacentHTML('beforeend', '<div class="grid-message">No se pudieron cargar los vídeos. Inténtalo de nuevo.</div>');
+      } finally {
+        videosLoading = false;
+      }
+    }
+
+    // Pinta los vídeos de 10 en 10 (igual que el catálogo)
+    function renderMoreVideos() {
+      if (!videoGrid || videosUnavailable || videosShown >= videosAll.length) return;
+      const chunk = videosAll.slice(videosShown, videosShown + LIMIT);
+      videosShown += chunk.length;
+
+      chunk.forEach(video => {
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        card.innerHTML = `
+          <div class="preview-container" style="width:100%; height:150px; overflow:hidden; position:relative;">
+            <video src="${escapeHtml(video.url)}" class="photo-preview" controls preload="metadata" playsinline></video>
+          </div>
+          <div class="photo-info">
+            <span class="photo-name" title="${escapeHtml(video.name)} · ${formatBytes(video.size)}">${escapeHtml(video.name)}</span>
+            <div class="menu-container" style="position:relative;">
+              <button class="dots-btn" type="button">&#8942;</button>
+              <div class="dropdown-menu">
+                <a href="${escapeHtml(video.downloadUrl)}" target="_blank" rel="noopener">Descargar</a>
+                <a href="#" class="delete video-delete">Eliminar</a>
+              </div>
+            </div>
+          </div>
+        `;
+        card.querySelector('.video-delete').addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          deleteVideo(video.id);
+        });
+        videoGrid.appendChild(card);
+      });
+      setTimeout(loadMoreIfScreenNotFull, 0);
+    }
+
+    async function deleteVideo(videoId) {
+      if (!confirm('¿Estás seguro de que deseas eliminar este vídeo?')) return;
+      try {
+        const response = await fetch(`${API_VIDEOS}/${encodeURIComponent(videoId)}`, {
+          method: 'DELETE',
+          headers: { 'X-Session-ID': sessionId }
+        });
+        if (!response.ok) throw new Error('Error al eliminar el vídeo');
+        loadVideosFromServer();
+      } catch (error) {
+        console.error('Error al eliminar vídeo:', error);
+        alert('No se pudo eliminar el vídeo.');
+      }
+    }
+
+    // PUT directo a R2 con XMLHttpRequest para poder mostrar el progreso
+    function putToR2(uploadUrl, headers, file, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', uploadUrl);
+        Object.entries(headers || {}).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+        xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100)); };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve() : reject(new Error('R2 respondió ' + xhr.status));
+        xhr.onerror = () => reject(new Error('Falló la subida a R2 (revisa el CORS del bucket)'));
+        xhr.send(file);
+      });
+    }
+
+    let uploadingVideos = false;
+    async function handleVideosUpload(files) {
+      if (!files.length || uploadingVideos) return;
+      uploadingVideos = true;
+      const failed = [];
+
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const contentType = guessVideoType(file);
+          if (!contentType) { failed.push(`${file.name} (no es un vídeo)`); continue; }
+
+          const setProgress = (pct) => {
+            if (videoCounter) videoCounter.innerHTML = `<span class="upload-progress">Subiendo ${i + 1} de ${files.length} · ${pct}%</span>`;
+          };
+          setProgress(0);
+
+          try {
+            const res = await fetch(`${API_VIDEOS}/upload-url`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
+              body: JSON.stringify({ name: file.name, contentType, size: file.size })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.uploadUrl) throw new Error(data.error || `Error ${res.status}`);
+            await putToR2(data.uploadUrl, data.headers, file, setProgress);
+          } catch (error) {
+            console.error('Error subiendo vídeo:', error);
+            failed.push(`${file.name} (${error.message})`);
+          }
+        }
+      } finally {
+        uploadingVideos = false;
+        loadVideosFromServer();
+      }
+
+      if (failed.length) alert('No se pudieron subir:\n- ' + failed.join('\n- '));
+    }
+
+    if (videoInput) {
+      videoInput.addEventListener('change', (e) => {
+        const selected = Array.from(e.target.files || []);
+        e.target.value = '';
+        handleVideosUpload(selected);
+      });
+    }
 </script>
  
 <script>
