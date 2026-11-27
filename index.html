@@ -743,6 +743,130 @@
       overflow-y: auto;
     }
 
+
+    /* ===== Subcarpetas en la barra lateral ===== */
+    .person-row {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .person-row .person-item {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chevron-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .chevron-btn:hover {
+      background-color: var(--hover-bg);
+      color: var(--text-main);
+    }
+
+    .chevron-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.2s ease;
+    }
+
+    .person-group.open .chevron-btn svg { transform: rotate(90deg); }
+
+    .subfolder-list {
+      list-style: none;
+      display: none;
+      flex-direction: column;
+      gap: 0.15rem;
+      margin: 0 0 0.35rem 1.5rem;
+      padding-left: 0.5rem;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .person-group.open .subfolder-list { display: flex; }
+
+    /* En ordenador, las subcarpetas también se despliegan al pasar el cursor */
+    @media (hover: hover) {
+      .person-group:hover .subfolder-list { display: flex; }
+      .person-group:hover .chevron-btn svg { transform: rotate(90deg); }
+    }
+
+    .subfolder-item,
+    .subfolder-add {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .subfolder-item:hover,
+    .subfolder-add:hover { background-color: var(--hover-bg); }
+
+    .subfolder-item.active {
+      color: var(--primary-color);
+      background-color: var(--hover-bg);
+    }
+
+    .subfolder-add { color: var(--text-muted); }
+
+    .person-action-btn {
+      background: none;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .person-action-btn:hover { background-color: var(--hover-bg); }
+    .person-action-btn.danger { color: #e53e3e; }
+
+    .person-header-actions { flex-wrap: wrap; justify-content: flex-end; }
+
+    .addto-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding-bottom: 0.35rem;
+    }
+
+    .addto-select {
+      margin-left: 2.1rem;
+      width: calc(100% - 2.1rem);
+      padding: 0.45rem 0.6rem;
+      font-size: 0.88rem;
+    }
+
+    .addto-select:disabled { opacity: 0.5; }
+
+    .lock-actions button:disabled { opacity: 0.6; cursor: not-allowed; }
+
     @media (max-width: 420px) {
       header { padding: 0 1rem; }
       .header-actions { gap: 0.5rem; }
@@ -1071,7 +1195,11 @@
       <section class="catalog-section">
         <div class="catalog-header">
           <h2 id="personTitle">Persona</h2>
-          <span id="personFileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
+          <div class="person-header-actions">
+            <span id="personFileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
+            <button type="button" class="person-action-btn" id="personRenameBtn">Renombrar</button>
+            <button type="button" class="person-action-btn danger" id="personDeleteBtn">Eliminar</button>
+          </div>
         </div>
         <div class="photo-grid" id="personGrid"></div>
         <p class="person-empty" id="personEmpty" hidden>Aquí aún no hay nada. Ve a Mi Catálogo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.</p>
@@ -1118,6 +1246,37 @@
       <div class="lock-actions">
         <button type="button" class="lock-secondary" id="addToCancelBtn">Cancelar</button>
         <button type="button" class="lock-primary" id="addToSaveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MOVER ARCHIVO A OTRA SUBCARPETA -->
+  <div class="lock-overlay" id="moveOverlay" hidden>
+    <div class="lock-modal" role="dialog" aria-modal="true" aria-labelledby="moveTitle">
+      <h3 id="moveTitle">Mover a...</h3>
+      <p class="lock-text" id="moveFileName"></p>
+      <div class="lock-fields">
+        <div class="addto-list" id="moveList"></div>
+      </div>
+      <p class="lock-error" id="moveError"></p>
+      <div class="lock-actions">
+        <button type="button" class="lock-secondary" id="moveCancelBtn">Cancelar</button>
+        <button type="button" class="lock-primary" id="moveSaveBtn">Mover</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PEDIR UN NOMBRE (nueva subcarpeta / renombrar) -->
+  <div class="lock-overlay" id="nameOverlay" hidden>
+    <div class="lock-modal" role="dialog" aria-modal="true" aria-labelledby="nameTitle">
+      <h3 id="nameTitle">Nombre</h3>
+      <div class="lock-fields">
+        <input type="text" class="sidebar-input" id="nameInput" maxlength="60" placeholder="Nombre" autocomplete="off">
+      </div>
+      <p class="lock-error" id="nameError"></p>
+      <div class="lock-actions">
+        <button type="button" class="lock-secondary" id="nameCancelBtn">Cancelar</button>
+        <button type="button" class="lock-primary" id="nameSaveBtn">Guardar</button>
       </div>
     </div>
   </div>
@@ -1824,7 +1983,6 @@
             throw new Error(detail || `Error ${response.status} al renombrar`);
           }
           closeRenameModal();
-          if (window.People) window.People.renameFile(photoId, newName);
           resetAndLoadCatalog();
         } catch (error) {
           console.error('Error al renombrar archivo:', error);
@@ -1861,7 +2019,6 @@
         });
  
         if (!response.ok) throw new Error('Error al eliminar');
-        if (window.People) window.People.forgetFile(photoId);
         resetAndLoadCatalog();
       } catch (error) {
         console.error('Error al eliminar foto:', error);
@@ -2240,11 +2397,9 @@
   })();
 </script>
 <script>
-  // BARRA LATERAL (HAMBURGUESA): LISTA DE SERES QUERIDOS
-  // De momento la lista se guarda en el navegador (localStorage).
-  // Al pulsar una persona se lanza el evento 'person-selected' con su id y nombre.
+  // PERSONAS, SUBCARPETAS Y "AÑADIR A..." — guardado en el servidor (tablas people, subfolders, person_files)
+  // Una persona no tiene almacén propio: solo referencias a archivos del almacén central.
   (function () {
-    const STORAGE_KEY = 'people';
     const menuBtn = document.getElementById('menuBtn');
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
@@ -2253,24 +2408,62 @@
 
     const addBtn = document.getElementById('addPersonBtn');
     const form = document.getElementById('addPersonForm');
-    const nameInput = document.getElementById('personNameInput');
-    const cancelBtn = document.getElementById('personCancelBtn');
-    const saveBtn = document.getElementById('personSaveBtn');
+    const nameField = document.getElementById('personNameInput');
+    const cancelPersonBtn = document.getElementById('personCancelBtn');
+    const savePersonBtn = document.getElementById('personSaveBtn');
     const listEl = document.getElementById('peopleList');
     const emptyEl = document.getElementById('peopleEmpty');
 
-    let people = [];
-    let activeId = null;
+    const personGrid = document.getElementById('personGrid');
+    const personTitle = document.getElementById('personTitle');
+    const personCounter = document.getElementById('personFileCounter');
+    const personEmpty = document.getElementById('personEmpty');
+    const personRenameBtn = document.getElementById('personRenameBtn');
+    const personDeleteBtn = document.getElementById('personDeleteBtn');
 
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      if (Array.isArray(saved)) people = saved.filter(p => p && p.id && p.name);
-    } catch (_) { people = []; }
+    const state = {
+      people: [],          // [{ id, name, subfolders: [{ id, name }] }]
+      openIds: new Set(),  // personas con las subcarpetas desplegadas
+      view: null,          // { personId, subfolderId | null }
+      loadError: false
+    };
+    let viewToken = 0;
 
-    function persist() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(people)); } catch (_) { /* sin almacenamiento */ }
+    // ---------- Comunicación con el servidor ----------
+    async function api(path, options) {
+      const opts = Object.assign({}, options);
+      opts.headers = Object.assign({ 'X-Session-ID': sessionId }, opts.headers || {});
+      if (opts.body && typeof opts.body !== 'string') {
+        opts.body = JSON.stringify(opts.body);
+        opts.headers['Content-Type'] = 'application/json';
+      }
+      const response = await fetch(API_BASE_URL + path, opts);
+      let data = {};
+      try { data = await response.json(); } catch (_) { /* sin JSON */ }
+      if (!response.ok) throw new Error(data.error || ('Error ' + response.status));
+      return data;
     }
 
+    function errorText(error, fallback) {
+      return (error && error.message && error.message !== 'Failed to fetch') ? error.message : fallback;
+    }
+
+    function findPerson(id) { return state.people.find(p => p.id === id) || null; }
+    function findSub(person, id) { return person ? (person.subfolders.find(s => s.id === id) || null) : null; }
+
+    async function loadPeople() {
+      try {
+        const data = await api('/api/people');
+        state.people = Array.isArray(data.people) ? data.people : [];
+        state.loadError = false;
+      } catch (error) {
+        console.error('Error cargando personas:', error);
+        state.loadError = true;
+      }
+      renderSidebar();
+    }
+
+    // ---------- Barra lateral ----------
     function openSidebar() {
       sidebar.classList.add('open');
       backdrop.classList.add('open');
@@ -2284,134 +2477,226 @@
       backdrop.classList.remove('open');
       sidebar.setAttribute('aria-hidden', 'true');
       menuBtn.setAttribute('aria-expanded', 'false');
-      hideForm();
+      hidePersonForm();
       menuBtn.focus();
     }
 
-    function showForm() {
+    function showPersonForm() {
       form.hidden = false;
       addBtn.hidden = true;
-      nameInput.value = '';
-      saveBtn.disabled = true;
-      nameInput.focus();
+      nameField.value = '';
+      savePersonBtn.disabled = true;
+      nameField.focus();
     }
 
-    function hideForm() {
+    function hidePersonForm() {
       form.hidden = true;
       addBtn.hidden = false;
-      nameInput.value = '';
+      nameField.value = '';
     }
 
-    function render() {
+    function renderSidebar() {
       listEl.innerHTML = '';
-      emptyEl.hidden = people.length > 0;
-      people.forEach(person => {
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'person-item' + (person.id === activeId ? ' active' : '');
+      if (state.loadError) {
+        emptyEl.hidden = false;
+        emptyEl.textContent = 'No se pudieron cargar las personas. Revisa tu conexión y vuelve a abrir el menú.';
+      } else {
+        emptyEl.hidden = state.people.length > 0;
+        emptyEl.textContent = 'Aún no has añadido a nadie. Pulsa "Nueva persona" para empezar.';
+      }
 
+      state.people.forEach(person => {
+        const group = document.createElement('li');
+        group.className = 'person-group' + (state.openIds.has(person.id) ? ' open' : '');
+
+        const row = document.createElement('div');
+        row.className = 'person-row';
+
+        const personBtn = document.createElement('button');
+        personBtn.type = 'button';
+        const personActive = state.view && state.view.personId === person.id && !state.view.subfolderId;
+        personBtn.className = 'person-item' + (personActive ? ' active' : '');
         const avatar = document.createElement('span');
         avatar.className = 'person-avatar';
         avatar.textContent = person.name.trim().charAt(0).toUpperCase();
-
         const name = document.createElement('span');
         name.className = 'person-name';
         name.textContent = person.name;
+        personBtn.appendChild(avatar);
+        personBtn.appendChild(name);
+        personBtn.addEventListener('click', () => { openView(person.id, null); closeSidebar(); });
 
-        btn.appendChild(avatar);
-        btn.appendChild(name);
-        btn.addEventListener('click', () => {
-          activeId = person.id;
-          render();
-          document.dispatchEvent(new CustomEvent('person-selected', { detail: { id: person.id, name: person.name } }));
-          closeSidebar();
+        const chevron = document.createElement('button');
+        chevron.type = 'button';
+        chevron.className = 'chevron-btn';
+        chevron.setAttribute('aria-label', 'Mostrar subcarpetas de ' + person.name);
+        chevron.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"></polyline></svg>';
+        chevron.addEventListener('click', () => {
+          if (state.openIds.has(person.id)) state.openIds.delete(person.id);
+          else state.openIds.add(person.id);
+          group.classList.toggle('open');
         });
 
-        li.appendChild(btn);
-        listEl.appendChild(li);
+        row.appendChild(personBtn);
+        row.appendChild(chevron);
+        group.appendChild(row);
+
+        const subList = document.createElement('ul');
+        subList.className = 'subfolder-list';
+
+        person.subfolders.forEach(sub => {
+          const li = document.createElement('li');
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          const subActive = state.view && state.view.subfolderId === sub.id;
+          btn.className = 'subfolder-item' + (subActive ? ' active' : '');
+          btn.textContent = sub.name;
+          btn.title = sub.name;
+          btn.addEventListener('click', () => { openView(person.id, sub.id); closeSidebar(); });
+          li.appendChild(btn);
+          subList.appendChild(li);
+        });
+
+        const addLi = document.createElement('li');
+        const addSub = document.createElement('button');
+        addSub.type = 'button';
+        addSub.className = 'subfolder-add';
+        addSub.textContent = 'Nueva subcarpeta';
+        addSub.addEventListener('click', () => createSubfolder(person));
+        addLi.appendChild(addSub);
+        subList.appendChild(addLi);
+
+        group.appendChild(subList);
+        listEl.appendChild(group);
       });
     }
 
-    function savePerson() {
-      const name = nameInput.value.trim();
+    async function createPerson() {
+      const name = nameField.value.trim();
       if (!name) return;
-      people.push({ id: 'p' + Date.now().toString(36), name: name });
-      persist();
-      hideForm();
-      render();
-    }
-
-    menuBtn.addEventListener('click', openSidebar);
-    closeBtn.addEventListener('click', closeSidebar);
-    backdrop.addEventListener('click', closeSidebar);
-    addBtn.addEventListener('click', showForm);
-    cancelBtn.addEventListener('click', hideForm);
-    saveBtn.addEventListener('click', savePerson);
-
-    nameInput.addEventListener('input', () => { saveBtn.disabled = !nameInput.value.trim(); });
-    nameInput.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter') { ev.preventDefault(); savePerson(); }
-    });
-
-    document.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
-    });
-
-    render();
-  })();
-</script>
-<script>
-  // SECCIONES DE PERSONAS + "AÑADIR A..."
-  // Una persona no tiene almacén propio: solo guarda referencias a archivos del almacén central.
-  // De momento las relaciones viven en el navegador (localStorage, clave 'peopleFiles').
-  // Cuando se conecte el backend, basta con cambiar loadLinks() y saveLinks().
-  (function () {
-    const LINKS_KEY = 'peopleFiles';
-
-    function loadPeople() {
+      savePersonBtn.disabled = true;
       try {
-        const saved = JSON.parse(localStorage.getItem('people') || '[]');
-        return Array.isArray(saved) ? saved.filter(p => p && p.id && p.name) : [];
-      } catch (_) { return []; }
+        await api('/api/people', { method: 'POST', body: { name: name } });
+        hidePersonForm();
+        await loadPeople();
+      } catch (error) {
+        console.error('Error creando persona:', error);
+        alert(errorText(error, 'No se pudo crear la persona. Inténtalo de nuevo.'));
+        savePersonBtn.disabled = !nameField.value.trim();
+      }
     }
 
-    // links: { personId: [ { id, name, url, isPublic } ] }
-    function loadLinks() {
+    async function createSubfolder(person) {
+      const name = await askName('Nueva subcarpeta de ' + person.name, '', 'Crear');
+      if (!name) return;
       try {
-        const saved = JSON.parse(localStorage.getItem(LINKS_KEY) || '{}');
-        return (saved && typeof saved === 'object' && !Array.isArray(saved)) ? saved : {};
-      } catch (_) { return {}; }
+        await api('/api/people/' + encodeURIComponent(person.id) + '/subfolders', { method: 'POST', body: { name: name } });
+        state.openIds.add(person.id);
+        await loadPeople();
+      } catch (error) {
+        console.error('Error creando subcarpeta:', error);
+        alert(errorText(error, 'No se pudo crear la subcarpeta. Inténtalo de nuevo.'));
+      }
     }
 
-    function saveLinks(links) {
-      try { localStorage.setItem(LINKS_KEY, JSON.stringify(links)); } catch (_) { /* sin almacenamiento */ }
+    // ---------- Modal para pedir un nombre ----------
+    const nameOverlay = document.getElementById('nameOverlay');
+    const nameTitle = document.getElementById('nameTitle');
+    const nameInput = document.getElementById('nameInput');
+    const nameError = document.getElementById('nameError');
+    const nameCancelBtn = document.getElementById('nameCancelBtn');
+    const nameSaveBtn = document.getElementById('nameSaveBtn');
+    let nameResolver = null;
+
+    function askName(title, initial, confirmLabel) {
+      return new Promise(resolve => {
+        nameResolver = resolve;
+        nameTitle.textContent = title;
+        nameSaveBtn.textContent = confirmLabel || 'Guardar';
+        nameInput.value = initial || '';
+        nameError.textContent = '';
+        nameOverlay.hidden = false;
+        nameInput.focus();
+        nameInput.select();
+      });
     }
 
-    let activePersonId = null;
+    function finishName(value) {
+      nameOverlay.hidden = true;
+      const resolve = nameResolver;
+      nameResolver = null;
+      if (resolve) resolve(value);
+    }
 
-    // ---------- Sección de una persona ----------
-    const personGrid = document.getElementById('personGrid');
-    const personTitle = document.getElementById('personTitle');
-    const personCounter = document.getElementById('personFileCounter');
-    const personEmpty = document.getElementById('personEmpty');
+    function submitName() {
+      const value = nameInput.value.replace(/\s+/g, ' ').trim();
+      if (!value) { nameError.textContent = 'El nombre no puede estar vacío.'; return; }
+      if (value.length > 60) { nameError.textContent = 'Máximo 60 caracteres.'; return; }
+      finishName(value);
+    }
+
+    nameSaveBtn.addEventListener('click', submitName);
+    nameCancelBtn.addEventListener('click', () => finishName(null));
+    nameOverlay.addEventListener('mousedown', (ev) => { if (ev.target === nameOverlay) finishName(null); });
+    nameInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); submitName(); } });
+
+    // ---------- Página de una persona / subcarpeta ----------
+    function showPersonPage() {
+      currentActiveTab = 'personPage';
+      document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('personPage').classList.add('active');
+      window.scrollTo(0, 0);
+    }
 
     function personPreviewHtml(file) {
-      let html = getFilePreviewHtml(file.name, file.url);
       // En la sección de una persona los audios deben poder reproducirse
-      return html.replace('<audio ', '<audio controls ');
+      return getFilePreviewHtml(file.name, file.url).replace('<audio ', '<audio controls ');
     }
 
-    function renderPerson() {
-      if (!personGrid) return;
-      const person = loadPeople().find(p => p.id === activePersonId);
-      if (!person) return;
+    async function openView(personId, subfolderId) {
+      state.view = { personId: personId, subfolderId: subfolderId || null };
+      showPersonPage();
+      renderSidebar();
+      await refreshView();
+    }
 
-      const files = loadLinks()[person.id] || [];
-      personTitle.textContent = person.name;
-      personCounter.textContent = files.length + ' archivo' + (files.length !== 1 ? 's' : '');
-      personEmpty.hidden = files.length > 0;
+    async function refreshView() {
+      if (!state.view) return;
+      const person = findPerson(state.view.personId);
+      if (!person) return;
+      const sub = findSub(person, state.view.subfolderId);
+      const token = ++viewToken;
+
+      personTitle.textContent = sub ? (person.name + ' / ' + sub.name) : person.name;
+      personRenameBtn.textContent = 'Renombrar';
       personGrid.innerHTML = '';
+      personEmpty.hidden = true;
+      personCounter.textContent = 'Cargando...';
+
+      let path = '/api/people/' + encodeURIComponent(person.id) + '/files';
+      if (sub) path += '?subfolder=' + encodeURIComponent(sub.id);
+
+      try {
+        const data = await api(path);
+        if (token !== viewToken) return; // se abrió otra vista mientras tanto
+        renderFiles(person, sub, Array.isArray(data.files) ? data.files : []);
+      } catch (error) {
+        if (token !== viewToken) return;
+        console.error('Error cargando archivos de la persona:', error);
+        personCounter.textContent = '';
+        personEmpty.hidden = false;
+        personEmpty.textContent = errorText(error, 'No se pudieron cargar los archivos. Revisa tu conexión e inténtalo de nuevo.');
+      }
+    }
+
+    function renderFiles(person, sub, files) {
+      personCounter.textContent = files.length + ' archivo' + (files.length !== 1 ? 's' : '');
+      personGrid.innerHTML = '';
+      personEmpty.hidden = files.length > 0;
+      personEmpty.textContent = sub
+        ? 'Esta subcarpeta está vacía. Entra en ' + person.name + ' y usa "Mover a..." en los tres puntos de un archivo para traerlo aquí.'
+        : 'Aquí aún no hay nada. Ve a Mi Catálogo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.';
 
       files.forEach(file => {
         const card = document.createElement('div');
@@ -2426,15 +2711,21 @@
               <button class="dots-btn" type="button">&#8942;</button>
               <div class="dropdown-menu">
                 <a href="${escapeHtml(withDownloadParam(file.url))}" target="_blank" rel="noopener">Descargar</a>
+                <a href="#" class="move-link">Mover a...</a>
                 <a href="#" class="remove-link">Quitar de ${escapeHtml(person.name)}</a>
               </div>
             </div>
           </div>
         `;
+        card.querySelector('.move-link').addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          openMove(person, file);
+        });
         card.querySelector('.remove-link').addEventListener('click', (ev) => {
           ev.preventDefault();
           ev.stopPropagation();
-          removeFromPerson(person.id, file.id);
+          removeFile(person, file);
         });
         const media = card.querySelector('.preview-container img, .preview-container video');
         if (media) {
@@ -2444,112 +2735,262 @@
       });
     }
 
-    function removeFromPerson(personId, fileId) {
-      const links = loadLinks();
-      links[personId] = (links[personId] || []).filter(f => f.id !== fileId);
-      saveLinks(links);
-      renderPerson();
+    async function removeFile(person, file) {
+      try {
+        await api('/api/people/' + encodeURIComponent(person.id) + '/files/' + encodeURIComponent(file.id), { method: 'DELETE' });
+        await refreshView();
+      } catch (error) {
+        console.error('Error quitando archivo:', error);
+        alert(errorText(error, 'No se pudo quitar el archivo. Inténtalo de nuevo.'));
+      }
     }
 
-    document.addEventListener('person-selected', (ev) => {
-      activePersonId = ev.detail.id;
-      currentActiveTab = 'personPage';
-      document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('personPage').classList.add('active');
-      window.scrollTo(0, 0);
-      renderPerson();
+    // Renombrar / eliminar lo que se está viendo (la persona o la subcarpeta)
+    personRenameBtn.addEventListener('click', async () => {
+      if (!state.view) return;
+      const person = findPerson(state.view.personId);
+      const sub = findSub(person, state.view.subfolderId);
+      if (!person) return;
+      const current = sub ? sub.name : person.name;
+      const name = await askName(sub ? 'Renombrar subcarpeta' : 'Renombrar persona', current, 'Guardar');
+      if (!name || name === current) return;
+      try {
+        const path = sub ? '/api/subfolders/' + encodeURIComponent(sub.id) : '/api/people/' + encodeURIComponent(person.id);
+        await api(path, { method: 'PATCH', body: { name: name } });
+        await loadPeople();
+        await refreshView();
+      } catch (error) {
+        console.error('Error renombrando:', error);
+        alert(errorText(error, 'No se pudo renombrar. Inténtalo de nuevo.'));
+      }
     });
 
-    // ---------- Modal "Añadir a..." ----------
-    const overlay = document.getElementById('addToOverlay');
-    const fileNameEl = document.getElementById('addToFileName');
-    const listEl = document.getElementById('addToList');
-    const errorEl = document.getElementById('addToError');
-    const cancelBtn = document.getElementById('addToCancelBtn');
-    const saveBtn = document.getElementById('addToSaveBtn');
-    let currentFile = null;
-
-    function closeAddTo() {
-      overlay.hidden = true;
-      currentFile = null;
-    }
-
-    function openAddTo(photo) {
-      if (!photo || !photo.id) return;
-      currentFile = { id: String(photo.id), name: photo.name, url: photo.url, isPublic: !!photo.isPublic };
-      fileNameEl.textContent = photo.name;
-      errorEl.textContent = '';
-      listEl.innerHTML = '';
-
-      const people = loadPeople();
-      const links = loadLinks();
-
-      if (!people.length) {
-        listEl.innerHTML = '<p class="lock-text">Todavía no has creado a nadie. Abre el menú de la esquina y pulsa "Nueva persona".</p>';
-        saveBtn.disabled = true;
-      } else {
-        saveBtn.disabled = false;
-        people.forEach(person => {
-          const already = (links[person.id] || []).some(f => f.id === currentFile.id);
-          const row = document.createElement('label');
-          row.className = 'addto-row';
-          const box = document.createElement('input');
-          box.type = 'checkbox';
-          box.value = person.id;
-          box.checked = already;
-          const name = document.createElement('span');
-          name.textContent = person.name;
-          row.appendChild(box);
-          row.appendChild(name);
-          listEl.appendChild(row);
-        });
+    personDeleteBtn.addEventListener('click', async () => {
+      if (!state.view) return;
+      const person = findPerson(state.view.personId);
+      const sub = findSub(person, state.view.subfolderId);
+      if (!person) return;
+      const message = sub
+        ? '¿Eliminar la subcarpeta "' + sub.name + '"? Sus archivos no se borran: pasarán a ' + person.name + ', sin subcarpeta.'
+        : '¿Eliminar a "' + person.name + '" y sus subcarpetas? Los archivos NO se borran del almacén central.';
+      if (!confirm(message)) return;
+      try {
+        if (sub) {
+          await api('/api/subfolders/' + encodeURIComponent(sub.id), { method: 'DELETE' });
+          await loadPeople();
+          await openView(person.id, null);
+        } else {
+          await api('/api/people/' + encodeURIComponent(person.id), { method: 'DELETE' });
+          state.view = null;
+          state.openIds.delete(person.id);
+          await loadPeople();
+          switchTab('catalogPage');
+        }
+      } catch (error) {
+        console.error('Error eliminando:', error);
+        alert(errorText(error, 'No se pudo eliminar. Inténtalo de nuevo.'));
       }
-      overlay.hidden = false;
-    }
+    });
 
-    function saveAddTo() {
-      if (!currentFile) return;
-      const links = loadLinks();
-      listEl.querySelectorAll('input[type="checkbox"]').forEach(box => {
-        const list = links[box.value] || [];
-        const exists = list.some(f => f.id === currentFile.id);
-        if (box.checked && !exists) list.push(currentFile);
-        if (!box.checked && exists) links[box.value] = list.filter(f => f.id !== currentFile.id);
-        else links[box.value] = list;
+    // ---------- Modal "Mover a..." (dentro de una persona) ----------
+    const moveOverlay = document.getElementById('moveOverlay');
+    const moveFileName = document.getElementById('moveFileName');
+    const moveList = document.getElementById('moveList');
+    const moveError = document.getElementById('moveError');
+    const moveCancelBtn = document.getElementById('moveCancelBtn');
+    const moveSaveBtn = document.getElementById('moveSaveBtn');
+    let moveCtx = null;
+
+    function closeMove() { moveOverlay.hidden = true; moveCtx = null; }
+
+    function openMove(person, file) {
+      moveCtx = { person: person, file: file };
+      moveFileName.textContent = file.name;
+      moveError.textContent = '';
+      moveList.innerHTML = '';
+
+      const options = [{ id: '', name: 'Sin subcarpeta' }].concat(person.subfolders);
+      moveSaveBtn.disabled = false;
+      options.forEach(opt => {
+        const label = document.createElement('label');
+        label.className = 'addto-row';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'moveTarget';
+        radio.value = opt.id;
+        radio.checked = (file.subfolderId || '') === opt.id;
+        const span = document.createElement('span');
+        span.textContent = opt.name;
+        label.appendChild(radio);
+        label.appendChild(span);
+        moveList.appendChild(label);
       });
-      saveLinks(links);
-      closeAddTo();
-      if (activePersonId && document.getElementById('personPage').classList.contains('active')) renderPerson();
+      if (!person.subfolders.length) {
+        const hint = document.createElement('p');
+        hint.className = 'lock-text';
+        hint.textContent = 'Esta persona aún no tiene subcarpetas. Créalas desde el menú lateral con "Nueva subcarpeta".';
+        moveList.appendChild(hint);
+        moveSaveBtn.disabled = true;
+      }
+      moveOverlay.hidden = false;
     }
 
-    cancelBtn.addEventListener('click', closeAddTo);
-    saveBtn.addEventListener('click', saveAddTo);
-    overlay.addEventListener('mousedown', (ev) => { if (ev.target === overlay) closeAddTo(); });
-    document.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape' && !overlay.hidden) closeAddTo();
+    async function saveMove() {
+      if (!moveCtx) return;
+      const checked = moveList.querySelector('input[type="radio"]:checked');
+      const target = checked && checked.value ? checked.value : null;
+      moveSaveBtn.disabled = true;
+      moveError.textContent = '';
+      try {
+        await api('/api/people/' + encodeURIComponent(moveCtx.person.id) + '/files/' + encodeURIComponent(moveCtx.file.id),
+          { method: 'PATCH', body: { subfolderId: target } });
+        closeMove();
+        await refreshView();
+      } catch (error) {
+        console.error('Error moviendo archivo:', error);
+        moveError.textContent = errorText(error, 'No se pudo mover. Inténtalo de nuevo.');
+        moveSaveBtn.disabled = false;
+      }
+    }
+
+    moveCancelBtn.addEventListener('click', closeMove);
+    moveSaveBtn.addEventListener('click', saveMove);
+    moveOverlay.addEventListener('mousedown', (ev) => { if (ev.target === moveOverlay) closeMove(); });
+
+    // ---------- Modal "Añadir a..." (desde el almacén central) ----------
+    const addToOverlay = document.getElementById('addToOverlay');
+    const addToFileName = document.getElementById('addToFileName');
+    const addToList = document.getElementById('addToList');
+    const addToError = document.getElementById('addToError');
+    const addToCancelBtn = document.getElementById('addToCancelBtn');
+    const addToSaveBtn = document.getElementById('addToSaveBtn');
+    let addToCtx = null; // { fileId, rows: [{ personId, box, select }] }
+
+    function closeAddTo() { addToOverlay.hidden = true; addToCtx = null; }
+
+    async function openAddTo(photo) {
+      if (!photo || !photo.id) return;
+      addToCtx = { fileId: String(photo.id), rows: [] };
+      addToFileName.textContent = photo.name;
+      addToError.textContent = '';
+      addToList.innerHTML = '';
+      addToSaveBtn.disabled = true;
+      addToOverlay.hidden = false;
+
+      if (!state.people.length) {
+        const hint = document.createElement('p');
+        hint.className = 'lock-text';
+        hint.textContent = state.loadError
+          ? 'No se pudieron cargar las personas. Revisa tu conexión e inténtalo de nuevo.'
+          : 'Todavía no has creado a nadie. Abre el menú de la esquina y pulsa "Nueva persona".';
+        addToList.appendChild(hint);
+        return;
+      }
+
+      let assignments = [];
+      try {
+        const data = await api('/api/photos/' + encodeURIComponent(photo.id) + '/people');
+        assignments = Array.isArray(data.assignments) ? data.assignments : [];
+      } catch (error) {
+        console.error('Error leyendo en qué personas está el archivo:', error);
+        addToError.textContent = errorText(error, 'No se pudo cargar la información del archivo.');
+        return;
+      }
+      if (!addToCtx || addToCtx.fileId !== String(photo.id)) return; // se cerró mientras cargaba
+
+      state.people.forEach(person => {
+        const current = assignments.find(a => a.personId === person.id);
+        const block = document.createElement('div');
+        block.className = 'addto-block';
+
+        const label = document.createElement('label');
+        label.className = 'addto-row';
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = !!current;
+        const nameEl = document.createElement('span');
+        nameEl.textContent = person.name;
+        label.appendChild(box);
+        label.appendChild(nameEl);
+        block.appendChild(label);
+
+        let select = null;
+        if (person.subfolders.length) {
+          select = document.createElement('select');
+          select.className = 'sidebar-input addto-select';
+          select.setAttribute('aria-label', 'Subcarpeta de ' + person.name);
+          const none = document.createElement('option');
+          none.value = '';
+          none.textContent = 'Sin subcarpeta';
+          select.appendChild(none);
+          person.subfolders.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub.id;
+            opt.textContent = sub.name;
+            select.appendChild(opt);
+          });
+          select.value = (current && current.subfolderId) || '';
+          select.disabled = !box.checked;
+          box.addEventListener('change', () => { select.disabled = !box.checked; });
+          block.appendChild(select);
+        }
+
+        addToCtx.rows.push({ personId: person.id, box: box, select: select });
+        addToList.appendChild(block);
+      });
+      addToSaveBtn.disabled = false;
+    }
+
+    async function saveAddTo() {
+      if (!addToCtx) return;
+      const assignments = addToCtx.rows
+        .filter(r => r.box.checked)
+        .map(r => ({ personId: r.personId, subfolderId: (r.select && r.select.value) ? r.select.value : null }));
+
+      addToSaveBtn.disabled = true;
+      addToCancelBtn.disabled = true;
+      addToError.textContent = '';
+      try {
+        await api('/api/photos/' + encodeURIComponent(addToCtx.fileId) + '/people', { method: 'PUT', body: { assignments: assignments } });
+        closeAddTo();
+        if (state.view && document.getElementById('personPage').classList.contains('active')) refreshView();
+      } catch (error) {
+        console.error('Error guardando "Añadir a...":', error);
+        addToError.textContent = errorText(error, 'No se pudo guardar. Inténtalo de nuevo.');
+        addToSaveBtn.disabled = false;
+      } finally {
+        addToCancelBtn.disabled = false;
+      }
+    }
+
+    addToCancelBtn.addEventListener('click', closeAddTo);
+    addToSaveBtn.addEventListener('click', saveAddTo);
+    addToOverlay.addEventListener('mousedown', (ev) => { if (ev.target === addToOverlay) closeAddTo(); });
+
+    // ---------- Eventos generales ----------
+    menuBtn.addEventListener('click', () => { openSidebar(); loadPeople(); });
+    closeBtn.addEventListener('click', closeSidebar);
+    backdrop.addEventListener('click', closeSidebar);
+    addBtn.addEventListener('click', showPersonForm);
+    cancelPersonBtn.addEventListener('click', hidePersonForm);
+    savePersonBtn.addEventListener('click', createPerson);
+    nameField.addEventListener('input', () => { savePersonBtn.disabled = !nameField.value.trim(); });
+    nameField.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); createPerson(); }
     });
 
-    // ---------- API para el resto de la página ----------
-    window.People = {
-      openAddTo: openAddTo,
-      // Si el archivo se renombra en el almacén central, se actualiza en todas las secciones
-      renameFile: function (fileId, newName) {
-        const links = loadLinks();
-        Object.keys(links).forEach(pid => {
-          (links[pid] || []).forEach(f => { if (f.id === String(fileId)) f.name = newName; });
-        });
-        saveLinks(links);
-      },
-      // Si el archivo se elimina del almacén central, desaparece de todas las secciones
-      forgetFile: function (fileId) {
-        const links = loadLinks();
-        Object.keys(links).forEach(pid => {
-          links[pid] = (links[pid] || []).filter(f => f.id !== String(fileId));
-        });
-        saveLinks(links);
-      }
-    };
+    // Escape cierra primero la ventana abierta y, si no hay ninguna, la barra lateral
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Escape') return;
+      if (!nameOverlay.hidden) { finishName(null); return; }
+      if (!moveOverlay.hidden) { closeMove(); return; }
+      if (!addToOverlay.hidden) { closeAddTo(); return; }
+      if (sidebar.classList.contains('open')) closeSidebar();
+    });
+
+    window.People = { openAddTo: openAddTo };
+
+    loadPeople();
   })();
 </script>
 </body>
