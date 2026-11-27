@@ -897,6 +897,65 @@
 
     .lock-actions button:disabled { opacity: 0.6; cursor: not-allowed; }
 
+
+    /* ===== Buscador (línea que se dibuja al abrirse) ===== */
+    .search-field {
+      position: relative;
+      width: 0;
+      margin-right: -0.75rem;
+      overflow: hidden;
+      opacity: 0;
+      transition: width 0.35s cubic-bezier(0.65, 0, 0.35, 1), margin-right 0.35s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.2s ease;
+    }
+
+    .search-field.open {
+      width: min(220px, 40vw);
+      margin-right: 0;
+      opacity: 1;
+    }
+
+    .search-field::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 2px;
+      background-color: var(--text-main);
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1) 0.1s;
+    }
+
+    .search-field.open::after { transform: scaleX(1); }
+
+    .search-input {
+      width: 100%;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      padding: 0.5rem 0.25rem;
+    }
+
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input::-webkit-search-cancel-button { display: none; }
+
+    /* En pantallas pequeñas el buscador ocupa la cabecera mientras está abierto */
+    @media (max-width: 640px) {
+      header.searching .tab-btn,
+      header.searching #composeBtn,
+      header.searching #lockBtn,
+      header.searching #themeToggleBtn { display: none; }
+      header.searching .header-actions { flex: 1; justify-content: flex-end; }
+      header.searching .search-field.open { flex: 1; width: auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .search-field, .search-field::after { transition: none; }
+    }
+
     @media (max-width: 420px) {
       header { padding: 0 1rem; }
       .header-actions { gap: 0.5rem; }
@@ -1158,6 +1217,16 @@
     </div>
  
     <div class="header-actions">
+    <div class="search-field" id="searchField">
+      <input type="search" class="search-input" id="searchInput" placeholder="Buscar" aria-label="Buscar archivos" autocomplete="off" maxlength="100">
+    </div>
+    <button class="theme-toggle-btn" id="searchBtn" aria-label="Buscar" title="Buscar" aria-expanded="false">
+      <svg viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+    </button>
+
     <button class="theme-toggle-btn" id="composeBtn" aria-label="Redactar mensaje privado" title="Redactar mensaje privado">
       <svg viewBox="0 0 24 24">
         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -1205,6 +1274,7 @@
           <span id="fileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
         </div>
         <div class="photo-grid" id="photoGrid"></div>
+        <p class="person-empty" id="catalogEmpty" hidden></p>
       </section>
     </div>
  
@@ -1447,6 +1517,8 @@
     let catalogLoading = false;
  
     let currentActiveTab = 'catalogPage';
+    let searchQuery = '';          // texto del buscador (vacío = sin filtro)
+    let catalogRequestId = 0;      // para descartar respuestas de búsquedas anteriores
     const LIMIT = 10;  // archivos que se piden cada vez (el resto se carga al hacer scroll)
 
     const MAX_PHOTO_UPLOAD_BYTES = 55 * 1024 * 1024;  // el backend corta las subidas de más de 60 MB
@@ -1479,6 +1551,7 @@
  
     // 3. NAVEGACIÓN ENTRE PÁGINAS
     function switchTab(pageId) {
+      if (window.AppSearch) window.AppSearch.reset(true);
       currentActiveTab = pageId;
       document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1606,8 +1679,12 @@
     }
 
     function resetAndLoadCatalog() {
+      catalogRequestId++;
+      catalogLoading = false;
       catalogPage = 1;
       catalogHasMore = true;
+      const emptyMsg = document.getElementById('catalogEmpty');
+      if (emptyMsg) emptyMsg.hidden = true;
       if (photoGrid) photoGrid.innerHTML = '';
       ensureUploadCard();
       loadPhotosFromServer();
@@ -1616,15 +1693,18 @@
     async function loadPhotosFromServer() {
       if (!photoGrid || catalogLoading || !catalogHasMore) return;
       catalogLoading = true;
+      const requestId = catalogRequestId;
       const skeletons = addSkeletons(photoGrid);
  
       try {
-        const response = await fetch(`${API_ENDPOINT}?page=${catalogPage}&limit=${LIMIT}`, {
+        const qs = searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : '';
+        const response = await fetch(`${API_ENDPOINT}?page=${catalogPage}&limit=${LIMIT}${qs}`, {
           headers: { 'X-Session-ID': sessionId }
         });
         if (!response.ok) throw new Error('Error al obtener el catálogo');
         
         const data = await response.json();
+        if (requestId !== catalogRequestId) return;  // llegó tarde: ya se pidió otra búsqueda
         
         // Extracción segura a prueba de fallos
         const photos = Array.isArray(data) ? data : (data.photos || []);
@@ -1632,7 +1712,14 @@
         const total = data.total !== undefined ? data.total : photos.length;
  
         if (fileCounter) {
-          fileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
+          fileCounter.textContent = searchQuery
+            ? `${total} resultado${total !== 1 ? 's' : ''}`
+            : `${total} archivo${total !== 1 ? 's' : ''}`;
+        }
+        const emptyMsg = document.getElementById('catalogEmpty');
+        if (emptyMsg) {
+          emptyMsg.hidden = !(searchQuery && total === 0);
+          emptyMsg.textContent = `Sin resultados para «${searchQuery}».`;
         }
  
         // La tarjeta "+" ya está en el grid (se crea en resetAndLoadCatalog) y no se borra al subir archivos
@@ -1644,7 +1731,7 @@
         console.error('Error cargando catálogo:', error);
       } finally {
         removeSkeletons(skeletons);
-        catalogLoading = false;
+        if (requestId === catalogRequestId) catalogLoading = false;
       }
     }
  
@@ -2592,6 +2679,7 @@
     }
 
     async function openView(personId, subfolderId) {
+      if (window.AppSearch) window.AppSearch.reset(true);
       state.view = { personId: personId, subfolderId: subfolderId || null };
       showPersonPage();
       renderSidebar();
@@ -2627,13 +2715,38 @@
       }
     }
 
+    function normText(text) {
+      return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
     function renderFiles(person, sub, files) {
-      personCounter.textContent = files.length + ' archivo' + (files.length !== 1 ? 's' : '');
+      state.files = files;
+      state.filesPerson = person;
+      state.filesSub = sub;
+      paintFiles();
+    }
+
+    // Pinta los archivos de la persona aplicando el buscador (el filtro se hace aquí, ya están todos cargados)
+    function paintFiles() {
+      const person = state.filesPerson;
+      const sub = state.filesSub;
+      if (!person) return;
+      const all = state.files || [];
+      const q = normText(searchQuery);
+      const files = q ? all.filter(f => normText(f.name).includes(q)) : all;
+
+      personCounter.textContent = q
+        ? files.length + ' resultado' + (files.length !== 1 ? 's' : '')
+        : files.length + ' archivo' + (files.length !== 1 ? 's' : '');
       personGrid.innerHTML = '';
       personEmpty.hidden = files.length > 0;
-      personEmpty.textContent = sub
-        ? 'Esta subcarpeta está vacía. Entra en ' + person.name + ' y usa "Mover a..." en los tres puntos de un archivo para traerlo aquí.'
-        : 'Aquí aún no hay nada. Ve a Todo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.';
+      if (q) {
+        personEmpty.textContent = 'Sin resultados para «' + searchQuery + '».';
+      } else {
+        personEmpty.textContent = sub
+          ? 'Esta subcarpeta está vacía. Entra en ' + person.name + ' y usa "Mover a..." en los tres puntos de un archivo para traerlo aquí.'
+          : 'Aquí aún no hay nada. Ve a Todo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.';
+      }
 
       files.forEach(file => {
         const card = document.createElement('div');
@@ -2927,7 +3040,72 @@
 
     window.People = { openAddTo: openAddTo };
 
+    // El buscador filtra la persona que se está viendo
+    document.addEventListener('app-search', () => {
+      if (currentActiveTab === 'personPage') paintFiles();
+    });
+
     loadPeople();
+  })();
+</script>
+<script>
+  // BUSCADOR: botón de lupa que despliega un campo con una línea que se dibuja.
+  // En "Todo" busca por nombre en el servidor; dentro de una persona filtra sus archivos.
+  (function () {
+    const btn = document.getElementById('searchBtn');
+    const field = document.getElementById('searchField');
+    const input = document.getElementById('searchInput');
+    const header = document.querySelector('header');
+    if (!btn || !field || !input) return;
+
+    let isOpen = false;
+    let timer = null;
+
+    function setOpen(value) {
+      isOpen = value;
+      field.classList.toggle('open', value);
+      if (header) header.classList.toggle('searching', value);
+      btn.setAttribute('aria-expanded', value ? 'true' : 'false');
+      if (value) setTimeout(() => input.focus(), 60);
+    }
+
+    // Aplica el texto como consulta (solo avisa si ha cambiado)
+    function apply() {
+      const value = input.value.replace(/\s+/g, ' ').trim();
+      if (value === searchQuery) return;
+      searchQuery = value;
+      document.dispatchEvent(new CustomEvent('app-search'));
+    }
+
+    function close() {
+      clearTimeout(timer);
+      input.value = '';
+      setOpen(false);
+      apply();
+    }
+
+    btn.addEventListener('click', () => { if (isOpen) close(); else setOpen(true); });
+
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(apply, 300);
+    });
+
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); clearTimeout(timer); apply(); }
+      if (ev.key === 'Escape') { ev.preventDefault(); close(); }
+    });
+
+    // Al cambiar de sección se vacía y se cierra sin relanzar ninguna búsqueda
+    window.AppSearch = {
+      reset: function (silent) {
+        clearTimeout(timer);
+        input.value = '';
+        searchQuery = '';
+        setOpen(false);
+        if (!silent) document.dispatchEvent(new CustomEvent('app-search'));
+      }
+    };
   })();
 </script>
 </body>
