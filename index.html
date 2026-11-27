@@ -700,6 +700,49 @@
       .sidebar, .sidebar-backdrop { transition: none; }
     }
 
+
+    /* ===== Sección de una persona + "Añadir a..." ===== */
+    .person-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .person-empty {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .addto-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .addto-row:hover { background-color: var(--hover-bg); }
+
+    .addto-row input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    .addto-list {
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
     @media (max-width: 420px) {
       header { padding: 0 1rem; }
       .header-actions { gap: 0.5rem; }
@@ -1023,6 +1066,18 @@
       </section>
     </div>
  
+    <!-- PÁGINA 3: SECCIÓN DE UNA PERSONA (solo muestra archivos del almacén central) -->
+    <div class="page-section" id="personPage">
+      <section class="catalog-section">
+        <div class="catalog-header">
+          <h2 id="personTitle">Persona</h2>
+          <span id="personFileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
+        </div>
+        <div class="photo-grid" id="personGrid"></div>
+        <p class="person-empty" id="personEmpty" hidden>Aquí aún no hay nada. Ve a Mi Catálogo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.</p>
+      </section>
+    </div>
+
   </main>
  
   <!-- BARRA LATERAL: SERES QUERIDOS -->
@@ -1050,6 +1105,22 @@
       <ul class="people-list" id="peopleList"></ul>
     </div>
   </aside>
+
+  <!-- MODAL: AÑADIR ARCHIVO A UNA O VARIAS PERSONAS -->
+  <div class="lock-overlay" id="addToOverlay" hidden>
+    <div class="lock-modal" role="dialog" aria-modal="true" aria-labelledby="addToTitle">
+      <h3 id="addToTitle">Añadir a...</h3>
+      <p class="lock-text" id="addToFileName"></p>
+      <div class="lock-fields">
+        <div class="addto-list" id="addToList"></div>
+      </div>
+      <p class="lock-error" id="addToError"></p>
+      <div class="lock-actions">
+        <button type="button" class="lock-secondary" id="addToCancelBtn">Cancelar</button>
+        <button type="button" class="lock-primary" id="addToSaveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: REDACTAR MENSAJE PRIVADO CON CONTRASEÑA -->
   <div class="lock-overlay" id="composeOverlay" hidden>
@@ -1463,6 +1534,7 @@
     }
 
     function loadMoreForActiveTab() {
+      if (currentActiveTab === 'personPage') return;
       if (currentActiveTab === 'catalogPage') loadPhotosFromServer();
       else loadPublicPhotosFromServer();
     }
@@ -1532,6 +1604,7 @@
               <button class="dots-btn" type="button">&#8942;</button>
               <div class="dropdown-menu">
                 <a href="${escapeHtml(withDownloadParam(photo.url))}" target="_blank" rel="noopener">Descargar</a>
+                ${!isPublicView ? `<a href="#" class="addto-link">Añadir a...</a>` : ''}
                 ${!isPublicView ? `
                   <a href="#" onclick="togglePublic('${photo.id}', ${!photo.isPublic}); return false;">
                     ${photo.isPublic ? 'Hacer Privada' : 'Hacer Pública'}
@@ -1545,6 +1618,15 @@
           </div>
         `;
         if (!isPublicView) {
+          const addToLink = card.querySelector('.addto-link');
+          if (addToLink) {
+            addToLink.addEventListener('click', (ev) => {
+              ev.preventDefault();
+              ev.stopPropagation();
+              document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+              if (window.People) window.People.openAddTo(photo);
+            });
+          }
           const renameLink = card.querySelector('.rename-link');
           if (renameLink) {
             renameLink.addEventListener('click', (ev) => {
@@ -1742,6 +1824,7 @@
             throw new Error(detail || `Error ${response.status} al renombrar`);
           }
           closeRenameModal();
+          if (window.People) window.People.renameFile(photoId, newName);
           resetAndLoadCatalog();
         } catch (error) {
           console.error('Error al renombrar archivo:', error);
@@ -1778,6 +1861,7 @@
         });
  
         if (!response.ok) throw new Error('Error al eliminar');
+        if (window.People) window.People.forgetFile(photoId);
         resetAndLoadCatalog();
       } catch (error) {
         console.error('Error al eliminar foto:', error);
@@ -2275,6 +2359,197 @@
     });
 
     render();
+  })();
+</script>
+<script>
+  // SECCIONES DE PERSONAS + "AÑADIR A..."
+  // Una persona no tiene almacén propio: solo guarda referencias a archivos del almacén central.
+  // De momento las relaciones viven en el navegador (localStorage, clave 'peopleFiles').
+  // Cuando se conecte el backend, basta con cambiar loadLinks() y saveLinks().
+  (function () {
+    const LINKS_KEY = 'peopleFiles';
+
+    function loadPeople() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('people') || '[]');
+        return Array.isArray(saved) ? saved.filter(p => p && p.id && p.name) : [];
+      } catch (_) { return []; }
+    }
+
+    // links: { personId: [ { id, name, url, isPublic } ] }
+    function loadLinks() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(LINKS_KEY) || '{}');
+        return (saved && typeof saved === 'object' && !Array.isArray(saved)) ? saved : {};
+      } catch (_) { return {}; }
+    }
+
+    function saveLinks(links) {
+      try { localStorage.setItem(LINKS_KEY, JSON.stringify(links)); } catch (_) { /* sin almacenamiento */ }
+    }
+
+    let activePersonId = null;
+
+    // ---------- Sección de una persona ----------
+    const personGrid = document.getElementById('personGrid');
+    const personTitle = document.getElementById('personTitle');
+    const personCounter = document.getElementById('personFileCounter');
+    const personEmpty = document.getElementById('personEmpty');
+
+    function personPreviewHtml(file) {
+      let html = getFilePreviewHtml(file.name, file.url);
+      // En la sección de una persona los audios deben poder reproducirse
+      return html.replace('<audio ', '<audio controls ');
+    }
+
+    function renderPerson() {
+      if (!personGrid) return;
+      const person = loadPeople().find(p => p.id === activePersonId);
+      if (!person) return;
+
+      const files = loadLinks()[person.id] || [];
+      personTitle.textContent = person.name;
+      personCounter.textContent = files.length + ' archivo' + (files.length !== 1 ? 's' : '');
+      personEmpty.hidden = files.length > 0;
+      personGrid.innerHTML = '';
+
+      files.forEach(file => {
+        const card = document.createElement('div');
+        card.className = 'photo-card';
+        card.innerHTML = `
+          <div class="preview-container" style="width:100%; height:150px; overflow:hidden; position:relative;">
+            ${personPreviewHtml(file)}
+          </div>
+          <div class="photo-info">
+            <span class="photo-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+            <div class="menu-container" style="position:relative;">
+              <button class="dots-btn" type="button">&#8942;</button>
+              <div class="dropdown-menu">
+                <a href="${escapeHtml(withDownloadParam(file.url))}" target="_blank" rel="noopener">Descargar</a>
+                <a href="#" class="remove-link">Quitar de ${escapeHtml(person.name)}</a>
+              </div>
+            </div>
+          </div>
+        `;
+        card.querySelector('.remove-link').addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          removeFromPerson(person.id, file.id);
+        });
+        const media = card.querySelector('.preview-container img, .preview-container video');
+        if (media) {
+          media.addEventListener('click', () => openPreview(file.name, file.url, media.tagName === 'VIDEO'));
+        }
+        personGrid.appendChild(card);
+      });
+    }
+
+    function removeFromPerson(personId, fileId) {
+      const links = loadLinks();
+      links[personId] = (links[personId] || []).filter(f => f.id !== fileId);
+      saveLinks(links);
+      renderPerson();
+    }
+
+    document.addEventListener('person-selected', (ev) => {
+      activePersonId = ev.detail.id;
+      currentActiveTab = 'personPage';
+      document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('personPage').classList.add('active');
+      window.scrollTo(0, 0);
+      renderPerson();
+    });
+
+    // ---------- Modal "Añadir a..." ----------
+    const overlay = document.getElementById('addToOverlay');
+    const fileNameEl = document.getElementById('addToFileName');
+    const listEl = document.getElementById('addToList');
+    const errorEl = document.getElementById('addToError');
+    const cancelBtn = document.getElementById('addToCancelBtn');
+    const saveBtn = document.getElementById('addToSaveBtn');
+    let currentFile = null;
+
+    function closeAddTo() {
+      overlay.hidden = true;
+      currentFile = null;
+    }
+
+    function openAddTo(photo) {
+      if (!photo || !photo.id) return;
+      currentFile = { id: String(photo.id), name: photo.name, url: photo.url, isPublic: !!photo.isPublic };
+      fileNameEl.textContent = photo.name;
+      errorEl.textContent = '';
+      listEl.innerHTML = '';
+
+      const people = loadPeople();
+      const links = loadLinks();
+
+      if (!people.length) {
+        listEl.innerHTML = '<p class="lock-text">Todavía no has creado a nadie. Abre el menú de la esquina y pulsa "Nueva persona".</p>';
+        saveBtn.disabled = true;
+      } else {
+        saveBtn.disabled = false;
+        people.forEach(person => {
+          const already = (links[person.id] || []).some(f => f.id === currentFile.id);
+          const row = document.createElement('label');
+          row.className = 'addto-row';
+          const box = document.createElement('input');
+          box.type = 'checkbox';
+          box.value = person.id;
+          box.checked = already;
+          const name = document.createElement('span');
+          name.textContent = person.name;
+          row.appendChild(box);
+          row.appendChild(name);
+          listEl.appendChild(row);
+        });
+      }
+      overlay.hidden = false;
+    }
+
+    function saveAddTo() {
+      if (!currentFile) return;
+      const links = loadLinks();
+      listEl.querySelectorAll('input[type="checkbox"]').forEach(box => {
+        const list = links[box.value] || [];
+        const exists = list.some(f => f.id === currentFile.id);
+        if (box.checked && !exists) list.push(currentFile);
+        if (!box.checked && exists) links[box.value] = list.filter(f => f.id !== currentFile.id);
+        else links[box.value] = list;
+      });
+      saveLinks(links);
+      closeAddTo();
+      if (activePersonId && document.getElementById('personPage').classList.contains('active')) renderPerson();
+    }
+
+    cancelBtn.addEventListener('click', closeAddTo);
+    saveBtn.addEventListener('click', saveAddTo);
+    overlay.addEventListener('mousedown', (ev) => { if (ev.target === overlay) closeAddTo(); });
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && !overlay.hidden) closeAddTo();
+    });
+
+    // ---------- API para el resto de la página ----------
+    window.People = {
+      openAddTo: openAddTo,
+      // Si el archivo se renombra en el almacén central, se actualiza en todas las secciones
+      renameFile: function (fileId, newName) {
+        const links = loadLinks();
+        Object.keys(links).forEach(pid => {
+          (links[pid] || []).forEach(f => { if (f.id === String(fileId)) f.name = newName; });
+        });
+        saveLinks(links);
+      },
+      // Si el archivo se elimina del almacén central, desaparece de todas las secciones
+      forgetFile: function (fileId) {
+        const links = loadLinks();
+        Object.keys(links).forEach(pid => {
+          links[pid] = (links[pid] || []).filter(f => f.id !== String(fileId));
+        });
+        saveLinks(links);
+      }
+    };
   })();
 </script>
 </body>
