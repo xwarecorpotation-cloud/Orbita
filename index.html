@@ -1124,7 +1124,6 @@
       </button>
       <nav class="nav-tabs">
         <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
-        <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
       </nav>
     </div>
  
@@ -1176,17 +1175,6 @@
           <span id="fileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
         </div>
         <div class="photo-grid" id="photoGrid"></div>
-      </section>
-    </div>
- 
-    <!-- PÁGINA 2: PUBLICADAS -->
-    <div class="page-section" id="publicPage">
-      <section class="catalog-section">
-        <div class="catalog-header">
-          <h2>Publicadas</h2>
-          <span id="publicFileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
-        </div>
-        <div class="photo-grid" id="publicPhotoGrid"></div>
       </section>
     </div>
  
@@ -1428,10 +1416,6 @@
     let catalogHasMore = true;
     let catalogLoading = false;
  
-    let publicPage = 1;
-    let publicHasMore = true;
-    let publicLoading = false;
- 
     let currentActiveTab = 'catalogPage';
     const LIMIT = 10;  // archivos que se piden cada vez (el resto se carga al hacer scroll)
 
@@ -1475,9 +1459,6 @@
       if (pageId === 'catalogPage') {
         document.getElementById('tabMyCatalog')?.classList.add('active');
         resetAndLoadCatalog();
-      } else {
-        document.getElementById('tabPublic')?.classList.add('active');
-        resetAndLoadPublic();
       }
     }
  
@@ -1498,9 +1479,7 @@
     // 5. REFERENCIAS DE ELEMENTOS DOM
     const fileInput = document.getElementById('fileInput');
     const photoGrid = document.getElementById('photoGrid');
-    const publicPhotoGrid = document.getElementById('publicPhotoGrid');
     const fileCounter = document.getElementById('fileCounter');
-    const publicFileCounter = document.getElementById('publicFileCounter');
  
     if (fileInput) {
       fileInput.addEventListener('change', (e) => {
@@ -1604,13 +1583,6 @@
       loadPhotosFromServer();
     }
  
-    function resetAndLoadPublic() {
-      publicPage = 1;
-      publicHasMore = true;
-      if (publicPhotoGrid) publicPhotoGrid.innerHTML = '';
-      loadPublicPhotosFromServer();
-    }
- 
     async function loadPhotosFromServer() {
       if (!photoGrid || catalogLoading || !catalogHasMore) return;
       catalogLoading = true;
@@ -1635,7 +1607,7 @@
  
         // La tarjeta "+" ya está en el grid (se crea en resetAndLoadCatalog) y no se borra al subir archivos
         ensureUploadCard();
-        renderPhotosChunk(photos, photoGrid, false);
+        renderPhotosChunk(photos, photoGrid);
         if (catalogHasMore) catalogPage++;
         setTimeout(loadMoreIfScreenNotFull, 0);
       } catch (error) {
@@ -1643,36 +1615,6 @@
       } finally {
         removeSkeletons(skeletons);
         catalogLoading = false;
-      }
-    }
- 
-    async function loadPublicPhotosFromServer() {
-      if (!publicPhotoGrid || publicLoading || !publicHasMore) return;
-      publicLoading = true;
-      const skeletons = addSkeletons(publicPhotoGrid);
- 
-      try {
-        const response = await fetch(`${API_ENDPOINT}/public?page=${publicPage}&limit=${LIMIT}`);
-        if (!response.ok) throw new Error('Error al obtener fotos públicas');
-        
-        const data = await response.json();
-        
-        const photos = Array.isArray(data) ? data : (data.photos || []);
-        publicHasMore = data.hasMore !== undefined ? data.hasMore : false;
-        const total = data.total !== undefined ? data.total : photos.length;
- 
-        if (publicFileCounter) {
-          publicFileCounter.textContent = `${total} archivo${total !== 1 ? 's' : ''}`;
-        }
- 
-        renderPhotosChunk(photos, publicPhotoGrid, true);
-        if (publicHasMore) publicPage++;
-        setTimeout(loadMoreIfScreenNotFull, 0);
-      } catch (error) {
-        console.error('Error cargando fotos públicas:', error);
-      } finally {
-        removeSkeletons(skeletons);
-        publicLoading = false;
       }
     }
  
@@ -1695,7 +1637,6 @@
     function loadMoreForActiveTab() {
       if (currentActiveTab === 'personPage') return;
       if (currentActiveTab === 'catalogPage') loadPhotosFromServer();
-      else loadPublicPhotosFromServer();
     }
 
     // Si los archivos cargados no llenan la pantalla (no hay scroll), pide la siguiente tanda
@@ -1741,7 +1682,7 @@
       }
     }
  
-    function renderPhotosChunk(photos, container, isPublicView) {
+    function renderPhotosChunk(photos, container) {
       if (!Array.isArray(photos)) return;
  
       photos.forEach(photo => {
@@ -1749,9 +1690,7 @@
         card.className = 'photo-card';
         
         const previewHtml = getFilePreviewHtml(photo.name, photo.url);
-        const nameDisplayHtml = isPublicView 
-          ? `<span class="photo-name" style="color: var(--text-muted); font-style: italic;">Archivo público</span>` 
-          : `<span class="photo-name" title="${escapeHtml(photo.name)}">${escapeHtml(photo.name)}</span>`;
+        const nameDisplayHtml = `<span class="photo-name" title="${escapeHtml(photo.name)}">${escapeHtml(photo.name)}</span>`;
  
         card.innerHTML = `
           <div class="preview-container" style="width:100%; height:150px; overflow:hidden; position:relative;">
@@ -1763,37 +1702,29 @@
               <button class="dots-btn" type="button">&#8942;</button>
               <div class="dropdown-menu">
                 <a href="${escapeHtml(withDownloadParam(photo.url))}" target="_blank" rel="noopener">Descargar</a>
-                ${!isPublicView ? `<a href="#" class="addto-link">Añadir a...</a>` : ''}
-                ${!isPublicView ? `
-                  <a href="#" onclick="togglePublic('${photo.id}', ${!photo.isPublic}); return false;">
-                    ${photo.isPublic ? 'Hacer Privada' : 'Hacer Pública'}
-                  </a>
-                ` : ''}
-                ${photo.isPublic ? `<a href="#" onclick="copyShareLink('${photo.url}'); return false;">Copiar Enlace</a>` : ''}
-                ${!isPublicView ? `<a href="#" class="rename-link">Renombrar</a>` : ''}
-                ${!isPublicView ? `<a href="#" onclick="deletePhoto('${photo.id}'); return false;" class="delete">Eliminar</a>` : ''}
+                <a href="#" class="addto-link">Añadir a...</a>
+                <a href="#" class="rename-link">Renombrar</a>
+                <a href="#" onclick="deletePhoto('${photo.id}'); return false;" class="delete">Eliminar</a>
               </div>
             </div>
           </div>
         `;
-        if (!isPublicView) {
-          const addToLink = card.querySelector('.addto-link');
-          if (addToLink) {
-            addToLink.addEventListener('click', (ev) => {
-              ev.preventDefault();
-              ev.stopPropagation();
-              document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
-              if (window.People) window.People.openAddTo(photo);
-            });
-          }
-          const renameLink = card.querySelector('.rename-link');
-          if (renameLink) {
-            renameLink.addEventListener('click', (ev) => {
-              ev.preventDefault();
-              ev.stopPropagation();
-              openRenameModal(photo.id, photo.name);
-            });
-          }
+        const addToLink = card.querySelector('.addto-link');
+        if (addToLink) {
+          addToLink.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+            if (window.People) window.People.openAddTo(photo);
+          });
+        }
+        const renameLink = card.querySelector('.rename-link');
+        if (renameLink) {
+          renameLink.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            openRenameModal(photo.id, photo.name);
+          });
         }
         // Tocar la imagen (o el vídeo) abre la vista previa agrandada
         const media = card.querySelector('.preview-container img, .preview-container video');
@@ -1848,30 +1779,6 @@
       overlay.appendChild(closeBtn);
       document.body.appendChild(overlay);
       document.body.style.overflow = 'hidden';
-    }
- 
-    async function togglePublic(photoId, shouldBePublic) {
-      try {
-        const response = await fetch(`${API_ENDPOINT}/${photoId}/public`, {
-          method: 'PATCH',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-Session-ID': sessionId 
-          },
-          body: JSON.stringify({ isPublic: shouldBePublic })
-        });
- 
-        if (!response.ok) throw new Error('Error al cambiar visibilidad');
-        resetAndLoadCatalog();
-      } catch (error) {
-        console.error('Error al actualizar visibilidad:', error);
-      }
-    }
- 
-    function copyShareLink(photoUrl) {
-      navigator.clipboard.writeText(photoUrl).then(() => {
-        alert('¡Enlace de descarga copiado al portapapeles!');
-      }).catch(err => console.error('Error al copiar enlace', err));
     }
  
     // 8. RENOMBRAR ARCHIVO
