@@ -116,20 +116,49 @@
       gap: 0.5rem;
     }
  
+    .nav-tabs {
+      height: 100%;
+      align-items: stretch;
+    }
+
     .tab-btn {
+      position: relative;
+      height: 100%;
       background: none;
       border: none;
-      padding: 0.5rem 1rem;
+      padding: 0 1rem;
       font-size: 0.95rem;
       font-weight: 600;
       color: var(--text-muted);
       cursor: pointer;
-      border-radius: 8px;
+      border-radius: 0;
     }
- 
-    .tab-btn.active {
-      color: var(--primary-color);
-      background-color: var(--hover-bg);
+
+    .tab-btn:hover { color: var(--text-main); }
+
+    .tab-btn.active { color: var(--text-main); }
+
+    /* Línea fina bajo la sección activa: se dibuja de izquierda a derecha al entrar y se recoge hacia la derecha al salir */
+    .tab-btn::after {
+      content: "";
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      bottom: 0;
+      height: 2px;
+      background-color: var(--text-main);
+      transform: scaleX(0);
+      transform-origin: right center;
+      transition: transform 0.4s cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    .tab-btn.active::after {
+      transform: scaleX(1);
+      transform-origin: left center;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tab-btn::after { transition: none; }
     }
  
     .theme-toggle-btn {
@@ -511,6 +540,7 @@
 
     /* ===== Barra lateral (hamburguesa) ===== */
     .header-left {
+      height: 100%;
       display: flex;
       align-items: center;
       gap: 0.75rem;
@@ -1123,7 +1153,7 @@
         </svg>
       </button>
       <nav class="nav-tabs">
-        <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
+        <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Todo</button>
       </nav>
     </div>
  
@@ -1171,7 +1201,7 @@
 
       <section class="catalog-section">
         <div class="catalog-header">
-          <h2>Mi Catálogo Privado</h2>
+          <h2>Todo</h2>
           <span id="fileCounter" style="color: var(--text-muted); font-size: 0.9rem;">0 archivos</span>
         </div>
         <div class="photo-grid" id="photoGrid"></div>
@@ -1190,7 +1220,7 @@
           </div>
         </div>
         <div class="photo-grid" id="personGrid"></div>
-        <p class="person-empty" id="personEmpty" hidden>Aquí aún no hay nada. Ve a Mi Catálogo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.</p>
+        <p class="person-empty" id="personEmpty" hidden>Aquí aún no hay nada. Ve a Todo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.</p>
       </section>
     </div>
 
@@ -2603,7 +2633,7 @@
       personEmpty.hidden = files.length > 0;
       personEmpty.textContent = sub
         ? 'Esta subcarpeta está vacía. Entra en ' + person.name + ' y usa "Mover a..." en los tres puntos de un archivo para traerlo aquí.'
-        : 'Aquí aún no hay nada. Ve a Mi Catálogo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.';
+        : 'Aquí aún no hay nada. Ve a Todo, abre los tres puntos de un archivo y elige "Añadir a..." para traerlo a esta sección.';
 
       files.forEach(file => {
         const card = document.createElement('div');
