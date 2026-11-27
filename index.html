@@ -508,6 +508,198 @@
       gap: 0.75rem;
     }
  
+
+    /* ===== Barra lateral (hamburguesa) ===== */
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+      z-index: 4000;
+    }
+
+    .sidebar-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.3s ease, visibility 0s;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 300px;
+      max-width: 85vw;
+      background-color: var(--card-bg);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      visibility: hidden;
+      transition: transform 0.3s ease, visibility 0s linear 0.3s;
+      z-index: 4001;
+    }
+
+    .sidebar.open {
+      transform: translateX(0);
+      visibility: visible;
+      transition: transform 0.3s ease, visibility 0s;
+    }
+
+    .sidebar-header {
+      height: 70px;
+      padding: 0 1rem 0 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header h3 {
+      font-size: 1.05rem;
+    }
+
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .sidebar-add-btn {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .sidebar-add-btn:hover { opacity: 0.9; }
+
+    .sidebar-add-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-add-form[hidden] { display: none; }
+
+    .sidebar-input {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.95rem;
+      color: var(--text-main);
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .sidebar-input:focus { border-color: var(--primary-color); }
+
+    .sidebar-add-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .sidebar-add-actions button {
+      padding: 0.45rem 0.9rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .sidebar-cancel {
+      background: none;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .sidebar-cancel:hover { background-color: var(--hover-bg); }
+
+    .sidebar-save {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+    }
+
+    .sidebar-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .people-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .person-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: none;
+      border: none;
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .person-item:hover { background-color: var(--hover-bg); }
+
+    .person-item.active {
+      color: var(--primary-color);
+      background-color: var(--hover-bg);
+    }
+
+    .person-avatar {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .person-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .people-empty {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sidebar, .sidebar-backdrop { transition: none; }
+    }
+
     @media (max-width: 420px) {
       header { padding: 0 1rem; }
       .header-actions { gap: 0.5rem; }
@@ -654,38 +846,6 @@
       cursor: not-allowed;
     }
 
-    /* ===== Pantalla de bloqueo al entrar (se muestra tras la pantalla de carga si hay PIN) ===== */
-    .app-lock-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 99998;
-      background-color: var(--bg-color);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .app-lock-screen[hidden] { display: none; }
-    .app-lock-card {
-      background-color: var(--card-bg);
-      color: var(--text-main);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      box-shadow: 0 12px 32px rgba(0,0,0,0.15);
-      width: 100%;
-      max-width: 380px;
-      padding: 2rem 1.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-    .app-lock-card h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
-    .app-lock-card .lock-input { margin-top: 1.2rem; }
-    body.app-locked { overflow: hidden; }
-    body.app-locked header,
-    body.app-locked main { visibility: hidden; }
-
     /* ===== Modal Redactar mensaje privado ===== */
     .compose-input {
       width: 100%;
@@ -785,28 +945,21 @@
     </div>
   </div>
  
-  <!-- PANTALLA DE BLOQUEO: aparece bajo la pantalla de carga cuando esta sesión tiene PIN -->
-  <div class="app-lock-screen" id="appLockScreen" hidden>
-    <div class="app-lock-card" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
-      <div class="lock-hero">
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-      </div>
-      <h3 id="appLockTitle">Aplicación bloqueada</h3>
-      <p class="lock-text">Introduce tu PIN para poder continuar.</p>
-      <input class="lock-input" id="appLockPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="PIN">
-      <div class="lock-error" id="appLockError" role="alert"></div>
-    </div>
-  </div>
-
   <!-- NAVBAR / HEADER (SIN LOGO EN LA BARRA) -->
   <header>
-    <nav class="nav-tabs">
-      <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
-      <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
-    </nav>
+    <div class="header-left">
+      <button class="theme-toggle-btn" id="menuBtn" aria-label="Abrir menú de personas" title="Mis seres queridos" aria-expanded="false" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <nav class="nav-tabs">
+        <button class="tab-btn active" id="tabMyCatalog" onclick="switchTab('catalogPage')">Mi Catálogo</button>
+        <button class="tab-btn" id="tabPublic" onclick="switchTab('publicPage')">Publicadas</button>
+      </nav>
+    </div>
  
     <div class="header-actions">
     <button class="theme-toggle-btn" id="composeBtn" aria-label="Redactar mensaje privado" title="Redactar mensaje privado">
@@ -872,6 +1025,32 @@
  
   </main>
  
+  <!-- BARRA LATERAL: SERES QUERIDOS -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <aside class="sidebar" id="sidebar" aria-label="Seres queridos" aria-hidden="true">
+    <div class="sidebar-header">
+      <h3>Seres queridos</h3>
+      <button class="theme-toggle-btn" id="sidebarCloseBtn" aria-label="Cerrar menú" title="Cerrar">
+        <svg viewBox="0 0 24 24">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="sidebar-body">
+      <button type="button" class="sidebar-add-btn" id="addPersonBtn">Nueva persona</button>
+      <div class="sidebar-add-form" id="addPersonForm" hidden>
+        <input type="text" class="sidebar-input" id="personNameInput" maxlength="60" placeholder="Nombre" autocomplete="off">
+        <div class="sidebar-add-actions">
+          <button type="button" class="sidebar-cancel" id="personCancelBtn">Cancelar</button>
+          <button type="button" class="sidebar-save" id="personSaveBtn" disabled>Guardar</button>
+        </div>
+      </div>
+      <p class="people-empty" id="peopleEmpty">Aún no has añadido a nadie. Pulsa "Nueva persona" para empezar.</p>
+      <ul class="people-list" id="peopleList"></ul>
+    </div>
+  </aside>
+
   <!-- MODAL: REDACTAR MENSAJE PRIVADO CON CONTRASEÑA -->
   <div class="lock-overlay" id="composeOverlay" hidden>
     <div class="lock-modal" role="dialog" aria-modal="true" aria-labelledby="composeTitle">
@@ -958,30 +1137,6 @@
         </div>
       </div>
  
-      <!-- Paso extra: ya hay un PIN (cambiarlo o quitarlo) -->
-      <div class="lock-step" id="lockStepManage" hidden>
-        <div class="lock-hero">
-          <svg viewBox="0 0 24 24">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-        </div>
-        <h3>Tu app está protegida con PIN</h3>
-        <p class="lock-text">Introduce tu PIN actual para cambiarlo o quitarlo.</p>
-        <div class="lock-fields">
-          <div>
-            <label class="lock-label" for="lockCurrentPin">PIN actual</label>
-            <input class="lock-input" id="lockCurrentPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••">
-          </div>
-        </div>
-        <div class="lock-error" id="lockManageError" role="alert" style="width:100%;"></div>
-        <div class="lock-actions" style="flex-wrap:wrap;">
-          <button type="button" class="lock-secondary" id="lockManageClose">Cerrar</button>
-          <button type="button" class="lock-secondary" id="lockRemoveBtn">Quitar PIN</button>
-          <button type="button" class="lock-primary" id="lockChangeBtn">Cambiar PIN</button>
-        </div>
-      </div>
-
       <!-- Paso 2: nuevo PIN -->
       <div class="lock-step" id="lockStepPin" hidden>
         <div class="lock-hero">
@@ -1016,8 +1171,8 @@
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         </div>
-        <h3 id="lockDoneTitle">PIN guardado</h3>
-        <p class="lock-text" id="lockDoneText">Tu PIN se ha configurado correctamente.</p>
+        <h3>PIN guardado</h3>
+        <p class="lock-text">Tu PIN se ha configurado correctamente.</p>
         <div class="lock-actions">
           <button type="button" class="lock-primary" id="lockDoneBtn">Listo</button>
         </div>
@@ -1052,97 +1207,15 @@
 
     const MAX_PHOTO_UPLOAD_BYTES = 55 * 1024 * 1024;  // el backend corta las subidas de más de 60 MB
  
-    // 1. PANTALLA DE CARGA + COMPROBACIÓN DEL PIN
-    // Mientras se ve la pantalla de carga se pregunta al servidor si esta sesión tiene PIN.
-    // Si lo tiene, al desaparecer la carga queda la pantalla de bloqueo hasta poner el PIN correcto.
-    window.appLock = { hasPin: null };
-    const appLockScreen = document.getElementById('appLockScreen');
-    const appLockPin = document.getElementById('appLockPin');
-    const appLockError = document.getElementById('appLockError');
-    let appUnlocking = false;
-
-    async function fetchLockStatus() {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/lock`, {
-          headers: { 'X-Session-ID': sessionId },
-          signal: controller.signal
-        });
-        if (!res.ok) throw new Error('Estado ' + res.status);
-        const data = await res.json();
-        window.appLock.hasPin = !!data.hasPin;
-        localStorage.setItem('app_has_pin', data.hasPin ? '1' : '0');
-      } catch (e) {
-        // Sin respuesta del servidor: se usa lo último que se supo en este dispositivo
-        window.appLock.hasPin = localStorage.getItem('app_has_pin') === '1' ? true : null;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-    const lockStatusPromise = fetchLockStatus();
-
-    function showAppLockScreen() {
-      if (!appLockScreen) return;
-      document.body.classList.add('app-locked');
-      appLockScreen.hidden = false;
-      if (appLockPin) {
-        appLockPin.value = '';
-        setTimeout(() => appLockPin.focus(), 450);
-      }
-    }
-
-    async function tryUnlock() {
-      if (appUnlocking || !appLockPin) return;
-      const pin = appLockPin.value;
-      if (!/^\d{4}$/.test(pin)) return;
-      appUnlocking = true;
-      appLockPin.disabled = true;
-      appLockError.textContent = '';
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/lock/verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-          body: JSON.stringify({ pin })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (res.ok) {
-          appLockScreen.hidden = true;
-          document.body.classList.remove('app-locked');
-          appLockPin.value = '';
-          return;
+    // 1. PANTALLA DE CARGA
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const loader = document.getElementById('loader-screen');
+        if (loader) {
+          loader.classList.add('fade-out');
+          setTimeout(() => loader.remove(), 400); 
         }
-        appLockError.textContent = data.error || 'PIN incorrecto.';
-      } catch (e) {
-        appLockError.textContent = 'No se pudo conectar. Inténtalo de nuevo.';
-      } finally {
-        appUnlocking = false;
-        appLockPin.disabled = false;
-        if (!appLockScreen.hidden) {
-          appLockPin.value = '';
-          appLockPin.focus();
-        }
-      }
-    }
-
-    if (appLockPin) {
-      appLockPin.addEventListener('input', () => {
-        const clean = appLockPin.value.replace(/\D/g, '').slice(0, 4);
-        if (clean !== appLockPin.value) appLockPin.value = clean;
-        appLockError.textContent = '';
-        if (clean.length === 4) tryUnlock();
-      });
-    }
-
-    window.addEventListener('DOMContentLoaded', async () => {
-      // Mínimo 2 s de pantalla de carga, y se espera (máx. 8 s) a saber si hay PIN
-      await Promise.all([new Promise(r => setTimeout(r, 2000)), lockStatusPromise]);
-      if (window.appLock.hasPin) showAppLockScreen();
-      const loader = document.getElementById('loader-screen');
-      if (loader) {
-        loader.classList.add('fade-out');
-        setTimeout(() => loader.remove(), 400);
-      }
+      }, 2000); 
     });
  
     // 2. LÓGICA DE TEMA CLARO / OSCURO
@@ -1727,17 +1800,8 @@
     const steps = {
       intro: document.getElementById('lockStepIntro'),
       pin: document.getElementById('lockStepPin'),
-      done: document.getElementById('lockStepDone'),
-      manage: document.getElementById('lockStepManage')
+      done: document.getElementById('lockStepDone')
     };
-    const manageCurrent = document.getElementById('lockCurrentPin');
-    const manageError = document.getElementById('lockManageError');
-    const manageCloseBtn = document.getElementById('lockManageClose');
-    const removeBtn = document.getElementById('lockRemoveBtn');
-    const changeBtn = document.getElementById('lockChangeBtn');
-    const doneTitle = document.getElementById('lockDoneTitle');
-    const doneText = document.getElementById('lockDoneText');
-    let changeCurrentPin = '';
     const cancelBtn = document.getElementById('lockCancelBtn');
     const nextBtn = document.getElementById('lockNextBtn');
     const backBtn = document.getElementById('lockBackBtn');
@@ -1761,24 +1825,15 @@
     function clearPins() {
       pinInput.value = '';
       confirmInput.value = '';
-      manageCurrent.value = '';
-      manageError.textContent = '';
       setError('');
       saveBtn.disabled = true;
     }
  
-    async function openLock() {
+    function openLock() {
       clearPins();
-      changeCurrentPin = '';
+      showStep('intro');
       overlay.hidden = false;
-      if (window.appLock.hasPin === null) await fetchLockStatus();
-      if (window.appLock.hasPin) {
-        showStep('manage');
-        manageCurrent.focus();
-      } else {
-        showStep('intro');
-        nextBtn.focus();
-      }
+      nextBtn.focus();
     }
  
     function closeLock() {
@@ -1797,25 +1852,13 @@
       saveBtn.disabled = saving || pinInput.value.length !== PIN_LENGTH || confirmInput.value.length !== PIN_LENGTH;
     }
  
-    function friendlyError(err) {
-      return (err && err.message && err.message !== 'Failed to fetch')
-        ? err.message
-        : 'No se pudo conectar. Inténtalo de nuevo.';
-    }
-
-    // Guarda el PIN en el backend (que lo guarda como hash en la base de datos)
+    // Punto de conexión con el backend: aquí irá la petición que guarda el PIN en la base de datos.
+    // Por ahora no se envía ni se guarda en ningún sitio.
     async function saveLockPin(pin) {
-      const res = await fetch(`${API_BASE_URL}/api/lock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-        body: JSON.stringify({ pin, currentPin: changeCurrentPin || undefined })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'No se pudo guardar el PIN.');
-      window.appLock.hasPin = true;
-      localStorage.setItem('app_has_pin', '1');
+      // TODO BACKEND: await fetch(`${API_BASE_URL}/...`, { method: 'POST', ... })
+      return true;
     }
-
+ 
     async function submitPin() {
       if (saving) return;
       const pin = pinInput.value;
@@ -1836,15 +1879,12 @@
       backBtn.disabled = true;
       try {
         await saveLockPin(pin);
-        changeCurrentPin = '';
         clearPins();
-        doneTitle.textContent = 'PIN guardado';
-        doneText.textContent = 'Tu PIN se ha configurado correctamente. Se pedirá cada vez que entres a la app.';
         showStep('done');
         doneBtn.focus();
       } catch (err) {
         console.error('Error al guardar el PIN:', err);
-        setError(friendlyError(err));
+        setError('No se pudo guardar el PIN. Inténtalo de nuevo.');
       } finally {
         saving = false;
         backBtn.disabled = false;
@@ -1864,82 +1904,10 @@
  
     backBtn.addEventListener('click', function () {
       if (saving) return;
-      changeCurrentPin = '';
       clearPins();
-      if (window.appLock.hasPin) {
-        showStep('manage');
-        manageCurrent.focus();
-      } else {
-        showStep('intro');
-        nextBtn.focus();
-      }
+      showStep('intro');
+      nextBtn.focus();
     });
-
-    // ----- Ya hay un PIN: cambiarlo o quitarlo (siempre pidiendo el PIN actual) -----
-    manageCurrent.addEventListener('input', function () {
-      const clean = manageCurrent.value.replace(/\D/g, '').slice(0, PIN_LENGTH);
-      if (clean !== manageCurrent.value) manageCurrent.value = clean;
-      manageError.textContent = '';
-    });
-
-    function setManageBusy(busy) {
-      removeBtn.disabled = busy;
-      changeBtn.disabled = busy;
-      manageCloseBtn.disabled = busy;
-    }
-
-    async function postLock(path, body) {
-      const res = await fetch(`${API_BASE_URL}/api/lock/${path}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Session-ID': sessionId },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'PIN incorrecto.');
-    }
-
-    changeBtn.addEventListener('click', async function () {
-      const current = manageCurrent.value;
-      if (current.length !== PIN_LENGTH) { manageError.textContent = 'Introduce tu PIN actual (' + PIN_LENGTH + ' números).'; return; }
-      manageError.textContent = '';
-      setManageBusy(true);
-      try {
-        await postLock('verify', { pin: current });
-        changeCurrentPin = current;
-        clearPins();
-        showStep('pin');
-        pinInput.focus();
-      } catch (err) {
-        manageError.textContent = friendlyError(err);
-        manageCurrent.value = '';
-      } finally {
-        setManageBusy(false);
-      }
-    });
-
-    removeBtn.addEventListener('click', async function () {
-      const current = manageCurrent.value;
-      if (current.length !== PIN_LENGTH) { manageError.textContent = 'Introduce tu PIN actual (' + PIN_LENGTH + ' números).'; return; }
-      manageError.textContent = '';
-      setManageBusy(true);
-      try {
-        await postLock('remove', { pin: current });
-        window.appLock.hasPin = false;
-        localStorage.setItem('app_has_pin', '0');
-        clearPins();
-        doneTitle.textContent = 'PIN eliminado';
-        doneText.textContent = 'La app ya no pedirá PIN al entrar.';
-        showStep('done');
-        doneBtn.focus();
-      } catch (err) {
-        manageError.textContent = friendlyError(err);
-        manageCurrent.value = '';
-      } finally {
-        setManageBusy(false);
-      }
-    });
-
-    manageCloseBtn.addEventListener('click', closeLock);
  
     pinInput.addEventListener('input', function () {
       onlyDigits(pinInput);
@@ -2185,6 +2153,128 @@
     document.addEventListener('keydown', (ev) => {
       if (ev.key === 'Escape' && !overlay.hidden) closeCompose();
     });
+  })();
+</script>
+<script>
+  // BARRA LATERAL (HAMBURGUESA): LISTA DE SERES QUERIDOS
+  // De momento la lista se guarda en el navegador (localStorage).
+  // Al pulsar una persona se lanza el evento 'person-selected' con su id y nombre.
+  (function () {
+    const STORAGE_KEY = 'people';
+    const menuBtn = document.getElementById('menuBtn');
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
+    if (!menuBtn || !sidebar || !backdrop) return;
+
+    const addBtn = document.getElementById('addPersonBtn');
+    const form = document.getElementById('addPersonForm');
+    const nameInput = document.getElementById('personNameInput');
+    const cancelBtn = document.getElementById('personCancelBtn');
+    const saveBtn = document.getElementById('personSaveBtn');
+    const listEl = document.getElementById('peopleList');
+    const emptyEl = document.getElementById('peopleEmpty');
+
+    let people = [];
+    let activeId = null;
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (Array.isArray(saved)) people = saved.filter(p => p && p.id && p.name);
+    } catch (_) { people = []; }
+
+    function persist() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(people)); } catch (_) { /* sin almacenamiento */ }
+    }
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      backdrop.classList.add('open');
+      sidebar.setAttribute('aria-hidden', 'false');
+      menuBtn.setAttribute('aria-expanded', 'true');
+      closeBtn.focus();
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('open');
+      sidebar.setAttribute('aria-hidden', 'true');
+      menuBtn.setAttribute('aria-expanded', 'false');
+      hideForm();
+      menuBtn.focus();
+    }
+
+    function showForm() {
+      form.hidden = false;
+      addBtn.hidden = true;
+      nameInput.value = '';
+      saveBtn.disabled = true;
+      nameInput.focus();
+    }
+
+    function hideForm() {
+      form.hidden = true;
+      addBtn.hidden = false;
+      nameInput.value = '';
+    }
+
+    function render() {
+      listEl.innerHTML = '';
+      emptyEl.hidden = people.length > 0;
+      people.forEach(person => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'person-item' + (person.id === activeId ? ' active' : '');
+
+        const avatar = document.createElement('span');
+        avatar.className = 'person-avatar';
+        avatar.textContent = person.name.trim().charAt(0).toUpperCase();
+
+        const name = document.createElement('span');
+        name.className = 'person-name';
+        name.textContent = person.name;
+
+        btn.appendChild(avatar);
+        btn.appendChild(name);
+        btn.addEventListener('click', () => {
+          activeId = person.id;
+          render();
+          document.dispatchEvent(new CustomEvent('person-selected', { detail: { id: person.id, name: person.name } }));
+          closeSidebar();
+        });
+
+        li.appendChild(btn);
+        listEl.appendChild(li);
+      });
+    }
+
+    function savePerson() {
+      const name = nameInput.value.trim();
+      if (!name) return;
+      people.push({ id: 'p' + Date.now().toString(36), name: name });
+      persist();
+      hideForm();
+      render();
+    }
+
+    menuBtn.addEventListener('click', openSidebar);
+    closeBtn.addEventListener('click', closeSidebar);
+    backdrop.addEventListener('click', closeSidebar);
+    addBtn.addEventListener('click', showForm);
+    cancelBtn.addEventListener('click', hideForm);
+    saveBtn.addEventListener('click', savePerson);
+
+    nameInput.addEventListener('input', () => { saveBtn.disabled = !nameInput.value.trim(); });
+    nameInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); savePerson(); }
+    });
+
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+    });
+
+    render();
   })();
 </script>
 </body>
